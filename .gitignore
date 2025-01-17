@@ -1,0 +1,18 @@
+# Node.js
+/frontend/node_modules/
+/frontend/build/
+
+# Java/Spring
+/backend/target/
+*.class
+*.log
+
+# macOS 시스템 파일
+.DS_Store
+
+# IDE 환경 파일
+.vscode/
+*.iml
+.idea/
+
+
