@@ -1,7 +1,24 @@
 import logo from './logo.svg';
 import './App.css';
+import React from "react";
+import Header from "./components/header";
+import Main from "./components/main";
+import Footer from "./components/footer";
+
 
 function App() {
+  return (
+    <div>
+      <Header />
+      <Main />
+      <Footer />
+    </div>
+  );
+}
+
+export default App;
+
+/* function App() {
   return (
     <div className="App">
       <header className="App-header">
@@ -22,4 +39,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; */ 
