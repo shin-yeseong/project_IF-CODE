@@ -1,25 +1,27 @@
+package com.example.backend.controller;
 
 import com.example.backend.entity.User;
-import com.example.backend.service.UserService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.backend.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/api/users")
-public class UserController {
+import jakarta.validation.Valid;
 
-    @Autowired
-    private UserService userService;
+@RestController
+@RequestMapping("/api")
+public class UserController {
+    private final UserRepository userRepository;
+
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody User user) {
-        try {
-            User registeredUser = userService.registerUser(user);
-            return ResponseEntity.ok(registeredUser); // 성공 시 유저 정보 반환
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage()); // 에러 메시지 반환
+        if (userRepository.existsByEmail(user.getEmail())) {
+            return ResponseEntity.badRequest().body("Email already exists!");
         }
+        userRepository.save(user);
+        return ResponseEntity.ok("User registered successfully!");
     }
 }
