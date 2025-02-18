@@ -3,10 +3,6 @@ body {
   margin: 0;
 }
 
-main {
-  padding-top: 70px;
-  min-height: calc(100vh - 70px);
-}
 .box-title {
   background: #ffffff;
   margin: 0px 60px 0 60px;

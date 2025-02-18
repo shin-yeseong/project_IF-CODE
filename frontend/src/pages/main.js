@@ -7,7 +7,7 @@ function Main() {
   return (
     <>
 <Header />
-    <main>
+    <main id="home-main">
       <div className="mainimg">
         <img src="img/main-img.png" alt="img"></img>
       </div>
