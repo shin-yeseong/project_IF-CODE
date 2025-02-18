@@ -1,54 +1,62 @@
+body {
+  padding-top: 70px;
+  margin: 0;
+}
+
+main {
+  padding-top: 70px;
+  min-height: calc(100vh - 70px);
+}
 .box-title {
-    background: #ffffff;
-    margin: 0px 60px 0 60px;
-    border-bottom: 2px solid #482070;
-    font-size: 40px;
-    color: #000000;
-    font-weight: bold;
-    font-style: italic;
-  }
-  
-  #box {
-    background: #ffffff;
-    display: flex;
-    margin: 25px 60px 50px 60px;
-    height: 500px;
-    justify-content: space-between;
-  }
-  
-  #box .block {
-    background: #ffffff;
-    width: 400px;
-    height: 500px;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  
-  #box .block .bt {
-    line-height: 30px;
-    justify-content: center;
-    border-radius: 10px 10px 0 0;
-    background: #482070;
-    color: #ffffff;
-    margin-left: 30px;
-    width: 150px;
-    height: 30px;
-    font-size: 15px;
-    font-weight: bold;
-    text-align: center;
-  }
-  
-  #box .block .bt:hover {
-    color: #482070;
-    text-decoration: underline;
-  }
-  
-  #box .block .bb {
-    box-shadow: 2px 2px 5px gray;
-    opacity: 0.6;
-    border-radius: 30px;
-    width: 400px;
-    height: 450px;
-    cursor: pointer;
-  }
-  
+  background: #ffffff;
+  margin: 0px 60px 0 60px;
+  border-bottom: 2px solid #482070;
+  font-size: 40px;
+  color: #000000;
+  font-weight: bold;
+  font-style: italic;
+}
+
+#box {
+  background: #ffffff;
+  display: flex;
+  margin: 25px 60px 50px 60px;
+  height: 500px;
+  justify-content: space-between;
+}
+
+#box .block {
+  background: #ffffff;
+  width: 400px;
+  height: 500px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+#box .block .bt {
+  line-height: 30px;
+  justify-content: center;
+  border-radius: 10px 10px 0 0;
+  background: #482070;
+  color: #ffffff;
+  margin-left: 30px;
+  width: 150px;
+  height: 30px;
+  font-size: 15px;
+  font-weight: bold;
+  text-align: center;
+}
+
+#box .block .bt:hover {
+  color: #482070;
+  text-decoration: underline;
+}
+
+#box .block .bb {
+  box-shadow: 2px 2px 5px gray;
+  opacity: 0.6;
+  border-radius: 30px;
+  width: 400px;
+  height: 450px;
+  cursor: pointer;
+}

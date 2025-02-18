@@ -1,6 +1,6 @@
 import React from "react";
 import "../styles/header.css"; 
-
+import { Link } from "react-router-dom";  
 function Header() {
   return (
     <header id="header">
@@ -35,8 +35,8 @@ function Header() {
         <div className="sign-box">
           <a href="#로그인화면링크" className="s-i">SIGN-IN</a>
           <span className="divider">|</span>
-          <a href="#회원가입화면링크" className="s-u">SIGN-UP</a>
-        </div>
+          <Link to="/signup" className="s-u">SIGN-UP</Link>        
+          </div>
       </div>
     </header>
   );
