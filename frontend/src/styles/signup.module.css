@@ -1,5 +1,8 @@
 .signupMain {
   display: flex;
+  padding-top: 70px;
+  padding-bottom: 100px;
+  background-color: #482070;
   flex-direction: column;
 }
 

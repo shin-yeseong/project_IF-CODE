@@ -1,9 +1,10 @@
-body {
+/* styles/main.module.css */
+.body {
   padding-top: 70px;
   margin: 0;
 }
 
-.box-title {
+.boxTitle {
   background: #ffffff;
   margin: 0px 60px 0 60px;
   border-bottom: 2px solid #482070;
@@ -13,7 +14,7 @@ body {
   font-style: italic;
 }
 
-#box {
+.box {
   background: #ffffff;
   display: flex;
   margin: 25px 60px 50px 60px;
@@ -21,7 +22,7 @@ body {
   justify-content: space-between;
 }
 
-#box .block {
+.block {
   background: #ffffff;
   width: 400px;
   height: 500px;
@@ -29,7 +30,7 @@ body {
   text-decoration: none;
 }
 
-#box .block .bt {
+.bt {
   line-height: 30px;
   justify-content: center;
   border-radius: 10px 10px 0 0;
@@ -43,12 +44,12 @@ body {
   text-align: center;
 }
 
-#box .block .bt:hover {
+.bt:hover {
   color: #482070;
   text-decoration: underline;
 }
 
-#box .block .bb {
+.bb {
   box-shadow: 2px 2px 5px gray;
   opacity: 0.6;
   border-radius: 30px;
