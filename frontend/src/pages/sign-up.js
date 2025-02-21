@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styles from "../styles/signup.module.css"; // ✅ 모듈 CSS 적용
+import styles from "../styles/signup.module.css"; 
 import Header from "../components/header";
 
 function Signup() {

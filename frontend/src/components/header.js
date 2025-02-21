@@ -33,7 +33,7 @@ function Header() {
 
       <div className="right">
         <div className="sign-box">
-          <a href="#로그인화면링크" className="s-i">SIGN-IN</a>
+          <Link to="/signin" className="s-i">SIGN-IN</Link>
           <span className="divider">|</span>
           <Link to="/signup" className="s-u">SIGN-UP</Link>        
           </div>
