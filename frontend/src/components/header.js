@@ -26,9 +26,9 @@ function Header() {
       </div>
       
       <div className="center">
-        <a href="home.html">
+        <Link to="/">
           <img src="img/if-code-name.png" style={{ width: "150px", height: "45px" }} alt="IF-CODE Logo" />
-        </a>
+          </Link>
       </div>
 
       <div className="right">
