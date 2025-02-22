@@ -7,7 +7,7 @@ function Main() {
   return (
     <>
       <Header />
-      <main className={styles.homeMain}> {/* ✅ id 대신 className으로 변경 */}
+      <main className={styles.homeMain}>
         <div className={styles.mainImg}>
           <img src="img/main-img.png" alt="img"></img>
         </div>
