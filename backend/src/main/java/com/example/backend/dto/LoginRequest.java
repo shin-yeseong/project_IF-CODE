@@ -1,16 +1,16 @@
 package com.example.backend.dto;
 
 public class LoginRequest {
-    private String email;
+    private String userId;
     private String password;
 
     // Getters and Setters
-    public String getEmail() {
-        return email;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getPassword() {

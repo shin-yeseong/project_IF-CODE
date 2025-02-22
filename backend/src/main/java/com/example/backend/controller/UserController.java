@@ -10,11 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api")
 public class UserController {
@@ -34,8 +32,8 @@ public class UserController {
     // ✅ 회원가입 API (register)
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody User user) {
-        if (userRepository.existsByEmail(user.getEmail())) {
-            return ResponseEntity.badRequest().body("이미 존재하는 이메일입니다.");
+        if (userRepository.existsByUserId(user.getUserId())) {
+            return ResponseEntity.badRequest().body("이미 존재하는 학번입니다.");
         }
 
         // 비밀번호 암호화 후 저장
@@ -47,14 +45,14 @@ public class UserController {
     // ✅ 로그인 API (login)
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
-        User user = userRepository.findByEmail(loginRequest.getEmail());
+        User user = userRepository.findByUserId(loginRequest.getUserId());
 
         if (user == null) {
-            System.out.println("❌ 로그인 실패: 해당 이메일이 존재하지 않습니다.");
-            return ResponseEntity.badRequest().body("이메일 또는 비밀번호가 잘못되었습니다.");
+            System.out.println("❌ 로그인 실패: 해당 학번이 존재하지 않습니다.");
+            return ResponseEntity.badRequest().body("학번 또는 비밀번호가 잘못되었습니다.");
         }
 
-        System.out.println("✅ 로그인 요청 - 이메일: " + loginRequest.getEmail());
+        System.out.println("✅ 로그인 요청 - 학번: " + loginRequest.getUserId());
         System.out.println("✅ 입력된 비밀번호: " + loginRequest.getPassword());
         System.out.println("✅ DB에 저장된 암호화된 비밀번호: " + user.getPassword());
 
@@ -68,7 +66,7 @@ public class UserController {
         }
 
         // JWT 토큰 생성
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user.getUserId());
         System.out.println("✅ 로그인 성공 - JWT 토큰 발급 완료");
 
         return ResponseEntity.ok(new JwtResponse(token));

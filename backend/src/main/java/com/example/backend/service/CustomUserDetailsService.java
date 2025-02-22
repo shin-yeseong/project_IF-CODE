@@ -19,16 +19,17 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email);
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+        User user = userRepository.findByUserId(userId);
         if (user == null) {
-            throw new UsernameNotFoundException("❌ User not found with email: " + email);
+            throw new UsernameNotFoundException("❌ User not found with 학번: " + userId);
         }
 
-        System.out.println("✅ 로그인 요청 - 이메일: " + email);
+        System.out.println("✅ 로그인 요청 - 학번: " + userId);
         System.out.println("✅ 데이터베이스 비밀번호: " + user.getPassword());
+
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+                user.getUserId(),  // ✅ 학번(userId) 사용
                 user.getPassword(),
                 Collections.emptyList()
         );
