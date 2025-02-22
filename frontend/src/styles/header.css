@@ -129,6 +129,20 @@
   transition: 0.1s ease-out;
 }
 
+#logout {
+  text-decoration: none;
+  margin-left: 10px;
+  font-size: 15px;
+  color: #6b24a1;
+  cursor: pointer;
+}
+
+#logout:hover {
+  color: #482070;
+  text-decoration: underline;
+  transition: 0.1s ease-out;
+}
+
 #header .right .box .sign-box {
   display: flex;
   justify-content: flex-end;

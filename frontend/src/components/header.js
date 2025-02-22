@@ -1,7 +1,24 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import "../styles/header.css"; 
-import { Link } from "react-router-dom";  
+import { Link, useNavigate } from "react-router-dom";
+
 function Header() {
+
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token); 
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token"); 
+    setIsLoggedIn(false); 
+    navigate("/"); 
+  };
+
   return (
     <header id="header">
       <div className="left">
@@ -33,9 +50,17 @@ function Header() {
 
       <div className="right">
         <div className="sign-box">
-          <Link to="/signin" className="s-i">SIGN-IN</Link>
-          <span className="divider">|</span>
-          <Link to="/signup" className="s-u">SIGN-UP</Link>        
+        {isLoggedIn ? (
+            <span id="logout" onClick={handleLogout} style={{ cursor: "pointer" }}>
+            LOGOUT
+          </span>
+          ) : (
+            <>
+              <Link to="/signin" className="s-i">SIGN-IN</Link>
+              <span className="divider">|</span>
+              <Link to="/signup" className="s-u">SIGN-UP</Link>
+            </>
+          )}    
           </div>
       </div>
     </header>

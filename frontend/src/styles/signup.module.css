@@ -145,3 +145,10 @@
   font-size: 12px;
   margin-top: 5px;
 }
+
+.successMessage {
+  color: green;
+  font-size: 18px;
+  text-align: center;
+  margin-top: 10px;
+}

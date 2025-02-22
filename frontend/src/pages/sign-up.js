@@ -1,12 +1,17 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import styles from "../styles/signup.module.css"; 
 import Header from "../components/header";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Signup() {
+  const navigate = useNavigate();  
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [name, setName] = useState("");
+  const [username, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [agree, setAgree] = useState(false);
@@ -41,12 +46,41 @@ function Signup() {
   };
   
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
-    console.log("회원가입 정보:", { userId, password, name, email, phone });
+    try {
+      const response = await axios.post("http://localhost:8080/api/register", {
+        userId,
+        password,
+        username,
+        email,
+        phone,
+        privacyConsent: agree,
+      });
+
+      console.log("✅ 회원가입 성공:", response.data);
+      toast.success("🎉 회원가입이 완료되었습니다!", {
+        position: "top-center",
+        autoClose: 1500,  
+      }); 
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+
+    } catch (err) {
+      console.error("❌ 회원가입 실패:", err.response?.data);
+      setErrors({ api: err.response?.data || "회원가입에 실패했습니다." });
+
+      toast.error(`❌ 회원가입 실패: ${err.response?.data || "서버 오류"}`, {
+        position: "top-center",
+        autoClose: 3000,
+      });
+    }
   };
+  
 
   return (
     <>
@@ -57,6 +91,7 @@ function Signup() {
       <div className={styles.container}>
         <div className={styles.signupWrapper}>
           <h2>회원가입</h2>
+          <ToastContainer />
           <form onSubmit={handleSubmit} className={styles.signupForm}>
             <div>
               <input
@@ -97,10 +132,10 @@ function Signup() {
             <div>
               <input
                 type="text"
-                name="name"
-                id="name"
+                name="username"
+                id="username"
                 placeholder="이름(닉네임)"
-                value={name}
+                value={username}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
