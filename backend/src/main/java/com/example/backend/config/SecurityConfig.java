@@ -40,10 +40,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return new CustomUserDetailsService(userRepository);
-    }
 
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
@@ -84,6 +80,6 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtil, userDetailsService);
+        return new JwtAuthenticationFilter(jwtUtil, userDetailsService);  // 이미 주입된 userDetailsService 사용
     }
 }

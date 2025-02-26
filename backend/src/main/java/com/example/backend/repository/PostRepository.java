@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PostRepository extends MongoRepository<Post, String> {
-    List<Post> findByAuthorId(String authorId); // 특정 사용자의 게시글 조회
+    List<Post> findByUserId(String userId);
 }
