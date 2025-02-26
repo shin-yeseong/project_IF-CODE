@@ -72,9 +72,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/register.html", "/post.html").permitAll()
                         .requestMatchers("/api/register", "/api/login").permitAll()
-                        .requestMatchers("/api/profile").authenticated()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/profile", "/api/posts").authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
