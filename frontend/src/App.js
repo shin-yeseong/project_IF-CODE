@@ -5,6 +5,7 @@ import SignUp from "./pages/sign-up";
 import SignIn from "./pages/sign-in";
 import MyPage from "./pages/mypage";
 import Post from "./pages/post";
+import Board from "./pages/board";
 
 import "./index.css"; 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/post" element={<Post />} />
+        <Route path="/board" element={<Board/>}/>
 
       </Routes>
     </Router>
