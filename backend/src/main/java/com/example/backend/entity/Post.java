@@ -14,6 +14,7 @@ public class Post {
     private String title; // 게시글 제목
     private String content; // 게시글 내용
     private String userId; // 작성자 ID (JWT에서 추출)
+    private int views;
 
     private LocalDateTime createdAt; // 생성 날짜
     private LocalDateTime updatedAt; // 수정 날짜
@@ -23,6 +24,7 @@ public class Post {
         this.title = title;
         this.content = content;
         this.userId = userId;
+        this.views = 0;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -45,4 +47,7 @@ public class Post {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public int getViews() { return views; }
+    public void setViews(int views) { this.views = views; }
 }

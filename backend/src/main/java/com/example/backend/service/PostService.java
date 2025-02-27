@@ -1,8 +1,10 @@
 package com.example.backend.service; // package 선언을 맨 위로 이동
 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.example.backend.entity.Post;
 import com.example.backend.repository.PostRepository;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +37,9 @@ public class PostService {
 
     // 모든 게시글 조회
     public List<Post> getAllPosts() {
-        return postRepository.findAll();
+        List<Post> posts = postRepository.findAll();
+        System.out.println("📢 전체 게시글 조회 결과: " + posts);  // ✅ 데이터 로깅 추가
+        return posts;
     }
 
     // 게시글 수정
@@ -56,9 +60,12 @@ public class PostService {
     }
 
 
-    // 게시글 삭제
     public boolean deletePost(String postId) {
-        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getPrincipal() instanceof UserDetails
+                ? ((UserDetails) authentication.getPrincipal()).getUsername()
+                : authentication.getPrincipal().toString();
+
         Optional<Post> existingPost = postRepository.findById(postId);
 
         if (existingPost.isPresent()) {
@@ -70,4 +77,5 @@ public class PostService {
         }
         return false;
     }
+
 }
