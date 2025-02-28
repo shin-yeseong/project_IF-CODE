@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/header";
+import { useNavigate } from "react-router-dom";
+
 
 const Board = () => {
   const [posts, setPosts] = useState([]);
@@ -15,6 +17,7 @@ const Board = () => {
     return koreaTime.toISOString().slice(0, 16).replace("T", " ");
   };
 
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -72,31 +75,49 @@ const Board = () => {
 
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-4 py-2 mx-2 text-white bg-[#482070] rounded disabled:bg-gray-400"
-          >
-            이전
-          </button>
-          {[...Array(totalPages)].map((_, index) => (
+        <div className="mt-6 flex items-center justify-between">
+          {/* 🔹 왼쪽 빈 공간 (페이지 버튼을 중앙으로 보내기 위함) */}
+          <div className="w-1/3"></div>
+
+          {/* 🔹 페이지 버튼 (정확히 중앙 정렬) */}
+          <div className="w-1/3 flex justify-center">
             <button
-              key={index}
-              onClick={() => handlePageChange(index + 1)}
-              className={`px-4 py-2 mx-2 ${currentPage === index + 1 ? "bg-[#482070] text-white" : "bg-gray-200 text-[#482070]"}`}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 mx-2 text-white bg-[#482070] rounded disabled:bg-gray-400"
             >
-              {index + 1}
+              이전
             </button>
-          ))}
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 mx-2 text-white bg-[#482070] rounded disabled:bg-gray-400"
-          >
-            다음
-          </button>
+            {[...Array(totalPages)].map((_, index) => (
+              <button
+                key={index}
+                onClick={() => handlePageChange(index + 1)}
+                className={`px-4 py-2 mx-2 ${currentPage === index + 1 ? "bg-[#482070] text-white" : "bg-gray-200 text-[#482070]"
+                  }`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 mx-2 text-white bg-[#482070] rounded disabled:bg-gray-400"
+            >
+              다음
+            </button>
+          </div>
+
+          {/* 🔹 글쓰기 버튼 (오른쪽 끝 정렬) */}
+          <div className="w-1/3 flex justify-end">
+            <button
+              onClick={() => navigate("/post")} // 글쓰기 페이지 이동
+              className="bg-[#482070] text-white px-4 py-2 rounded hover:bg-purple-900"
+            >
+              글쓰기
+            </button>
+          </div>
         </div>
+
       </div >
     </>
   );
