@@ -51,9 +51,12 @@ function Header() {
       <div className="right">
         <div className="sign-box">
         {isLoggedIn ? (
-            <span id="logout" onClick={handleLogout} style={{ cursor: "pointer" }}>
-            LOGOUT
+          <>
+            <Link to="/mypage" className="s-u">MyPage</Link>
+            <span className="s-u" onClick={handleLogout} style={{ cursor: "pointer" }}>
+            로그아웃
           </span>
+          </>
           ) : (
             <>
               <Link to="/signin" className="s-i">SIGN-IN</Link>
