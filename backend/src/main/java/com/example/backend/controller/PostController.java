@@ -1,52 +1,56 @@
 package com.example.backend.controller;
 
 
-import com.example.backend.entity.Post;  // ✅ Post import 추가
-import com.example.backend.service.PostService; // ✅ PostService import 추가
+import com.example.backend.entity.Post;
+import com.example.backend.entity.User;  // ✅ User 추가
+import com.example.backend.service.PostService;
+import com.example.backend.repository.UserRepository; // ✅ UserRepository 추가
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Map;
-import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Optional;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.Authentication;
 
-
-
-@CrossOrigin(origins = "http://localhost:3000")  // CORS 허용 추가
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
 
     private final PostService postService;
+    private final UserRepository userRepository; // ✅ UserRepository 추가
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService, UserRepository userRepository) {
         this.postService = postService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
     public ResponseEntity<List<Post>> getAllPosts() {
         List<Post> posts = postService.getAllPosts();
-        System.out.println("📢 전체 게시글 조회 결과: " + posts); // ✅ 로그 추가
+        System.out.println("📢 전체 게시글 조회 결과: " + posts);
         return ResponseEntity.ok(posts);
     }
 
-
     @PostMapping
     public ResponseEntity<Post> createPost(@RequestBody Map<String, String> requestBody) {
-        // 현재 로그인한 사용자 ID 가져오기
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = authentication.getPrincipal() instanceof UserDetails
                 ? ((UserDetails) authentication.getPrincipal()).getUsername()
                 : authentication.getPrincipal().toString();
 
+        // 🔹 userId로 userName 가져오기
+        User user = userRepository.findByUserId(userId);
+        String userName = (user != null) ? user.getUsername() : "Unknown";  // 없으면 "Unknown" 저장
+
         String title = requestBody.get("title");
         String content = requestBody.get("content");
 
-        // 게시글 생성 서비스 호출
-        Post createdPost = postService.createPost(title, content, userId);
+        // 🔹 userId와 userName을 함께 저장
+        Post createdPost = postService.createPost(title, content, userId, userName);
 
         return createdPost != null ? ResponseEntity.ok(createdPost) : ResponseEntity.badRequest().build();
     }

@@ -118,9 +118,13 @@ public class UserController {
             if (updateData.containsKey("phone")) {
                 user.setPhone(updateData.get("phone"));
             }
+            // ✅ 비밀번호 업데이트 추가
+            if (updateData.containsKey("password") && !updateData.get("password").isEmpty()) {
+                user.setPassword(passwordEncoder.encode(updateData.get("password"))); // 암호화 저장
+            }
 
             userRepository.save(user);
-            return ResponseEntity.ok("사용자 정보가 업데이트되었습니다.");
+            return ResponseEntity.ok(Map.of("message", "사용자 정보가 업데이트되었습니다."));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
         }
@@ -142,4 +146,28 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
         }
     }
+
+    @PostMapping("/verify-password")
+    public ResponseEntity<?> verifyPassword(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> request) {
+        try {
+            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId);
+
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+            }
+
+            String inputPassword = request.get("password");
+            boolean isMatch = passwordEncoder.matches(inputPassword, user.getPassword());
+
+            if (!isMatch) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("비밀번호가 올바르지 않습니다.");
+            }
+
+            return ResponseEntity.ok(Map.of("valid", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
+        }
+    }
+
 }

@@ -70,7 +70,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/register.html", "/post.html").permitAll()
                         .requestMatchers("/api/register", "/api/login", "/api/posts").permitAll()
-                        .requestMatchers("/api/profile", "/api/posts/**").authenticated()
+                        .requestMatchers("/api/profile", "/api/posts/**", "/api/verify-password","/api/profile/update").authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

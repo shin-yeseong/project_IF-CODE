@@ -1,4 +1,4 @@
-package com.example.backend.service; // package 선언을 맨 위로 이동
+package com.example.backend.service;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -6,6 +6,7 @@ import com.example.backend.entity.Post;
 import com.example.backend.repository.PostRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import com.example.backend.exception.UnauthorizedException;
@@ -19,30 +20,23 @@ public class PostService {
         this.postRepository = postRepository;
     }
 
-    // 게시글 생성
-    public Post createPost(String title, String content, String userId) {
-        Post post = new Post(title, content, userId);
+    public Post createPost(String title, String content, String userId, String userName) {
+        Post post = new Post(title, content, userId, userName);
         return postRepository.save(post);
     }
 
-    // 게시글 조회 (단일)
     public Optional<Post> getPostById(String postId) {
         return postRepository.findById(postId);
     }
 
-    // 특정 사용자 게시글 조회
-    public List<Post> getPostsByUser(String userId) {  // 메서드명 변경
+    public List<Post> getPostsByUser(String userId) {
         return postRepository.findByUserId(userId);
     }
 
-    // 모든 게시글 조회
     public List<Post> getAllPosts() {
-        List<Post> posts = postRepository.findAll();
-        System.out.println("📢 전체 게시글 조회 결과: " + posts);  // ✅ 데이터 로깅 추가
-        return posts;
+        return postRepository.findAll();
     }
 
-    // 게시글 수정
     public Optional<Post> updatePost(String postId, String title, String content, String userId) {
         Optional<Post> existingPost = postRepository.findById(postId);
 
@@ -53,12 +47,11 @@ public class PostService {
             }
             post.setTitle(title);
             post.setContent(content);
-            post.setUpdatedAt(java.time.LocalDateTime.now());
+            post.setUpdatedAt(LocalDateTime.now());
             return Optional.of(postRepository.save(post));
         }
         return Optional.empty();
     }
-
 
     public boolean deletePost(String postId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -77,5 +70,4 @@ public class PostService {
         }
         return false;
     }
-
 }
