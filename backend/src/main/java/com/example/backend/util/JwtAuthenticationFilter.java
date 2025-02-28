@@ -25,11 +25,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String token = resolveToken(request);
-        if (token != null && jwtUtil.validateToken(token)) {
+        if (token != null) {
             String userId = jwtUtil.extractUsername(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
 
-            if (userDetails != null) {
+            if (jwtUtil.validateToken(token, userDetails)) {
                 SecurityContextHolder.getContext().setAuthentication(
                         new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities()

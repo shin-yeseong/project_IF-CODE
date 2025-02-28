@@ -1,10 +1,12 @@
 package com.example.backend.util;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -39,16 +41,22 @@ public class JwtUtil {
                 .getSubject();  // 여기서 userId 가져옴
     }
 
-    public boolean validateToken(String token) {
+    public boolean validateToken(String token, UserDetails userDetails) {
         try {
-            Jwts.parserBuilder()
+            Claims claims = Jwts.parser()
                     .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            String username = claims.getSubject();
+            System.out.println("✅ 토큰에서 추출한 username: " + username);
+
+            return username.equals(userDetails.getUsername());
         } catch (Exception e) {
+            System.out.println("🚨 토큰 검증 실패: " + e.getMessage());
             return false;
         }
     }
+
 
 }

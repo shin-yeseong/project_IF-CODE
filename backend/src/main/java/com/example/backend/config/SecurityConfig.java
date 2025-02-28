@@ -81,5 +81,7 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(jwtUtil, userDetailsService);  // 이미 주입된 userDetailsService 사용
+
+
     }
 }
