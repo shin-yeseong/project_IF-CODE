@@ -1,29 +1,40 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/header";
 
-
-function Board() {
-  const [posts, setPosts] = useState([]); // 게시물 상태 관리
+const Board = () => {
+  const [posts, setPosts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-
   const postsPerPage = 10;
 
-  useEffect(() => {
-    fetch("http://localhost:8080/api/posts")  // 백엔드 API 호출 (백엔드 주소 확인 필수!)
-      .then((response) => response.json()) // 응답을 JSON으로 변환
-      .then((data) => {
-        setPosts(data); // 게시글 상태 업데이트
-      })
-      .catch((error) => {
-        console.error("게시글 불러오기 오류:", error);
-      });
-  }, []); // 컴포넌트가 처음 렌더링될 때만 실행
+  const formatDate = (isoString) => {
+    if (!isoString) return "-";
+    const date = new Date(isoString);
 
+    const koreaTime = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+
+    return koreaTime.toISOString().slice(0, 16).replace("T", " ");
+  };
+
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/posts");
+        if (!response.ok) throw new Error("게시글 데이터를 불러오는 데 실패했습니다.");
+        const data = await response.json();
+        setPosts(data);
+      } catch (error) {
+        console.error("게시글 불러오기 오류:", error);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  const totalPages = Math.ceil(posts.length / postsPerPage);
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
   const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
-
-  const totalPages = Math.ceil(posts.length / postsPerPage);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -33,35 +44,34 @@ function Board() {
     <>
       <Header />
       <div className="bg-white min-h-screen p-32 pt-32">
-        <h1 className="text-3xl font-bold text-[#482070]">Algorithm Study |</h1> 
+        <h1 className="text-3xl font-bold text-[#482070]">Algorithm Study |</h1>
         <p className="text-lg text-[#482070] mt-10">
-          본 게시판은 융합소프트웨어 연계전공생들을 위한 자유게시판입니다. <br /> 
+          본 게시판은 융합소프트웨어 연계전공생들을 위한 자유게시판입니다. <br />
           프로그래밍 및 알고리즘 관련 소통을 위해 자유롭게 글을 게시하고 댓글을 달며 소통할 수 있습니다.
         </p>
 
-        {/* 게시판 테이블 */}
         <div className="mt-16 bg-gray-100 p-6 rounded-lg shadow-md mb-20">
           <div className="flex font-bold text-[#482070] border-b">
-            <div className="flex-3 py-2 px-4 whitespace-nowrap">순번</div>
-            <div className="flex-1 py-2 px-4">제목</div>
-            <div className="flex-2 py-2 px-4">등록자명</div>
-            <div className="flex-2 py-2 px-4">등록일</div>
-            <div className="flex-3 py-2 px-4">조회수</div>
+            <div className="w-1/12 py-2 px-4 text-center">순번</div>
+            <div className="w-6/12 py-2 px-4">제목</div>
+            <div className="w-2/12 py-2 px-4 text-center">등록자명</div>
+            <div className="w-2/12 py-2 px-4 text-center whitespace-nowrap">등록일</div>
+            <div className="w-1/12 py-2 px-4 text-center">조회수</div>
           </div>
 
-          {/* 게시물 목록 */}
           {currentPosts.map((post, index) => (
             <div key={post.id} className="flex border-t">
-              <div className="flex-3 py-2 px-4 whitespace-nowrap">{indexOfFirstPost + index + 1}</div>
-              <div className="flex-1 py-2 px-4">{post.title}</div>
-              <div className="flex-2 py-2 px-4 text-center">{post.username}</div>
-              <div className="flex-2 py-2 px-4 text-center">{post.createdAt}</div>
-              <div className="flex-3 py-2 px-4 text-center">{post.views}</div>
+              <div className="w-1/12 py-2 px-4 text-center">{indexOfFirstPost + index + 1}</div>
+              <div className="w-6/12 py-2 px-4">{post.title}</div>
+              <div className="w-2/12 py-2 px-4 text-center">{post.userName}</div>
+              <div className="w-2/12 py-2 px-4 text-center whitespace-nowrap">{formatDate(post.createdAt)}</div>
+              <div className="w-1/12 py-2 px-4 text-center">{post.views}</div>
             </div>
           ))}
+
+
         </div>
 
-        {/* 페이지 네비게이션 */}
         <div className="mt-6 flex justify-center">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
@@ -87,9 +97,9 @@ function Board() {
             다음
           </button>
         </div>
-      </div>
+      </div >
     </>
   );
-}
+};
 
 export default Board;

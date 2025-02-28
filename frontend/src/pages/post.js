@@ -101,9 +101,8 @@ function PostCreatePage() {
           {/* 결과 메시지 */}
           {message && (
             <div
-              className={`text-center p-3 mt-4 ${
-                message.includes("성공") ? "text-green-500" : "text-red-500"
-              }`}
+              className={`text-center p-3 mt-4 ${message.includes("성공") ? "text-green-500" : "text-red-500"
+                }`}
             >
               {message}
             </div>

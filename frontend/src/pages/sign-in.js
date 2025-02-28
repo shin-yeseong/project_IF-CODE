@@ -5,26 +5,26 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Signin() {
-  const [userId, setUserId] = useState(""); 
+  const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault(); 
-    setError(null); 
+    e.preventDefault();
+    setError(null);
 
     try {
       const response = await axios.post(
         "http://localhost:8080/api/login",
-        { userId, password }, 
-        { withCredentials: true } 
-    );
+        { userId, password },
+        { withCredentials: true }
+      );
 
       console.log("✅ 로그인 성공!", response.data);
-      localStorage.setItem("token", response.data.token); 
+      localStorage.setItem("token", response.data.token);
 
-      navigate("/"); 
+      navigate("/");
     } catch (err) {
       console.error("❌ 로그인 실패", err.response?.data);
       setError("이메일 또는 비밀번호가 잘못되었습니다.");
