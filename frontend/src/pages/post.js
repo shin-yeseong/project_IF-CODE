@@ -1,116 +1,106 @@
 import React, { useState } from "react";
 import axios from "axios";
+import Header from "../components/header";
 
-function PostCreatePage() {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [message, setMessage] = useState("");
+const WritePost = () => {
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [file, setFile] = useState(null);
+    const [message, setMessage] = useState("");
 
-  // 게시글 제출 함수
-  const handleSubmit = (e) => {
-    e.preventDefault();
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]);
+    };
 
-    // 빈 필드 체크
-    if (!title || !content) {
-      setMessage("모든 필드를 입력하세요.");
-      return;
-    }
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    // 토큰 가져오기
-    const token = localStorage.getItem("token");
-
-    // 토큰이 없으면 로그인 페이지로 리디렉션
-    if (!token) {
-      setMessage("로그인 후 다시 시도해주세요.");
-      return;
-    }
-
-    // POST 요청으로 게시글 작성
-    axios
-      .post(
-        "http://localhost:8080/api/posts", // API 엔드포인트
-        { title, content },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then((response) => {
-        setMessage("게시글이 성공적으로 작성되었습니다!");
-        setTitle("");
-        setContent("");
-      })
-      .catch((error) => {
-        console.error("❌ 오류:", error);
-        if (error.response) {
-          if (error.response.status === 403) {
-            setMessage("접근 권한이 없습니다. 다시 로그인하세요.");
-          } else {
-            setMessage(`게시글 작성 실패: ${error.response.data.message || "알 수 없는 오류"}`);
-          }
-        } else {
-          setMessage("서버에 연결할 수 없습니다.");
+        const token = localStorage.getItem("token");
+        const userName = localStorage.getItem("userName");
+        if (!token) {
+            alert("로그인이 필요합니다!");
+            return;
         }
-      });
-  };
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
-      <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-2xl">
-        <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
-          게시글 작성
-        </h2>
-        <form onSubmit={handleSubmit}>
-          {/* 제목 입력 */}
-          <div className="mb-4">
-            <label htmlFor="title" className="block text-gray-700 font-semibold mb-2">
-              제목
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="게시글 제목을 입력하세요"
-            />
-          </div>
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("content", content);
+        formData.append("userName", userName || "");
+        if (file) {
+            formData.append("file", file);  // 첨부파일 추가
+        }
 
-          {/* 내용 입력 */}
-          <div className="mb-4">
-            <label htmlFor="content" className="block text-gray-700 font-semibold mb-2">
-              내용
-            </label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows="6"
-              placeholder="게시글 내용을 입력하세요"
-            />
-          </div>
+        try {
+            const response = await axios.post("http://localhost:8080/api/posts", formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data",
+                },
+            });
 
-          {/* 제출 버튼 */}
-          <div className="mb-4 text-center">
-            <button
-              type="submit"
-              className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-            >
-              게시글 작성
-            </button>
-          </div>
+            console.log("✅ 게시글 작성 성공:", response.data);
+            alert("게시글이 성공적으로 업로드되었습니다!");
+            setTitle("");
+            setContent("");
+            setFile(null);
+        } catch (error) {
+            console.error("❌ 게시글 작성 실패:", error);
+            alert("게시글 작성 중 오류 발생!");
+        }
+    };
 
-          {/* 결과 메시지 */}
-          {message && (
-            <div
-              className={`text-center p-3 mt-4 ${message.includes("성공") ? "text-green-500" : "text-red-500"
-                }`}
-            >
-              {message}
+
+    return (
+        <>
+            <Header />
+            <div className="bg-white min-h-screen p-32 pt-32">
+                <h1 className="text-3xl font-bold text-[#482070]">Algorithm Study |</h1>
+
+                <form onSubmit={handleSubmit} className="mt-10 bg-gray-100 p-6 rounded-lg shadow-md">
+                    {/* 🔹 제목 입력 */}
+                    <div className="mb-4">
+                        <label className="block text-lg font-semibold text-[#482070]">제목</label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="w-full border p-2 rounded-md"
+                            placeholder="제목을 입력하세요."
+                        />
+                    </div>
+
+                    {/* 🔹 본문 입력 */}
+                    <div className="mb-4">
+                        <textarea
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            className="w-full h-64 border p-2 rounded-md"
+                            placeholder="글을 작성해주세요."
+                        />
+                    </div>
+
+                    {/* 🔹 첨부파일 */}
+                    <div className="mb-4">
+                        <label className="block text-lg font-semibold text-[#482070]">첨부파일</label>
+                        <input type="file" onChange={handleFileChange} className="w-full border p-2 rounded-md" />
+                    </div>
+
+                    {/* 🔹 메시지 출력 */}
+                    {message && <p className="text-red-500 mb-4">{message}</p>}
+
+                    {/* 🔹 업로드 버튼 */}
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            className="bg-[#482070] text-white px-4 py-2 rounded-md hover:bg-purple-900"
+                        >
+                            업로드
+                        </button>
+                    </div>
+                </form>
             </div>
-          )}
-        </form>
-      </div>
-    </div>
-  );
-}
+        </>
+    );
+};
 
-export default PostCreatePage;
+export default WritePost;
