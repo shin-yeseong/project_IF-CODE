@@ -65,7 +65,12 @@ const Board = () => {
           {currentPosts.map((post, index) => (
             <div key={post.id} className="flex border-t">
               <div className="w-1/12 py-2 px-4 text-center">{indexOfFirstPost + index + 1}</div>
-              <div className="w-6/12 py-2 px-4">{post.title}</div>
+              <div
+                className="w-6/12 py-2 px-4 cursor-pointer text-blue-600 hover:underline"
+                onClick={() => navigate(`/post/${post.id}`)}
+              >
+                {post.title}
+              </div>
               <div className="w-2/12 py-2 px-4 text-center">{post.userName}</div>
               <div className="w-2/12 py-2 px-4 text-center whitespace-nowrap">{formatDate(post.createdAt)}</div>
               <div className="w-1/12 py-2 px-4 text-center">{post.views}</div>
@@ -76,10 +81,8 @@ const Board = () => {
         </div>
 
         <div className="mt-6 flex items-center justify-between">
-          {/* 🔹 왼쪽 빈 공간 (페이지 버튼을 중앙으로 보내기 위함) */}
           <div className="w-1/3"></div>
 
-          {/* 🔹 페이지 버튼 (정확히 중앙 정렬) */}
           <div className="w-1/3 flex justify-center">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
@@ -107,10 +110,9 @@ const Board = () => {
             </button>
           </div>
 
-          {/* 🔹 글쓰기 버튼 (오른쪽 끝 정렬) */}
           <div className="w-1/3 flex justify-end">
             <button
-              onClick={() => navigate("/post")} // 글쓰기 페이지 이동
+              onClick={() => navigate("/post")}
               className="bg-[#482070] text-white px-4 py-2 rounded hover:bg-purple-900"
             >
               글쓰기

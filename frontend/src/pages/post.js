@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import Header from "../components/header";
 
-const WritePost = () => {
+const Post = () => {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [file, setFile] = useState(null);
@@ -103,4 +103,4 @@ const WritePost = () => {
     );
 };
 
-export default WritePost;
+export default Post;

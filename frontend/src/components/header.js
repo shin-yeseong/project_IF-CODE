@@ -44,7 +44,7 @@ function Header() {
 
       <div className="center">
         <Link to="/">
-          <img src="img/if-code-name.png" style={{ width: "150px", height: "45px" }} alt="IF-CODE Logo" />
+          <img src="/img/if-code-name.png" style={{ width: "150px", height: "45px" }} alt="IF-CODE Logo" />
         </Link>
       </div>
 

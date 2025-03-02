@@ -6,7 +6,8 @@ import SignIn from "./pages/sign-in";
 import MyPage from "./pages/mypage";
 import Post from "./pages/post";
 import Board from "./pages/board";
-
+import PostedPage from "./pages/postedpage";
+import EditPost from "./pages/editpost";
 import "./index.css";
 function App() {
   return (
@@ -18,7 +19,8 @@ function App() {
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/post" element={<Post />} />
         <Route path="/board" element={<Board />} />
-
+        <Route path="/post/:id" element={<PostedPage />} />
+        <Route path="/editpost/:id" element={<EditPost />} />
       </Routes>
     </Router>
   );
