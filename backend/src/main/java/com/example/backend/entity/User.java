@@ -7,9 +7,13 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.Getter;
+import lombok.Setter;
 
 @Document(collection = "users") 
 @Data
+@Getter
+@Setter
 public class User {
     @Id
     private String id;
@@ -39,5 +43,16 @@ public class User {
 
     @Size(max = 200, message = "자기소개는 최대 200자까지 입력 가능합니다.")
     private String introduction;
+
+    private String profilePicture;
+    private String profilePictureUrl;
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
+    }
 }
 

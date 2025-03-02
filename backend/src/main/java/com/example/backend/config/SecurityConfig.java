@@ -49,6 +49,11 @@ public class SecurityConfig {
         return new ProviderManager(List.of(authProvider));
     }
 
+    /*@Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }*/
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -68,8 +73,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/register", "/api/login", "/api/posts" ,"/api/comments/**").permitAll()
-                        .requestMatchers("/api/profile", "/api/posts/**", "/api/verify-password","/api/profile/update", "/api/comments").authenticated()
+                        .requestMatchers("/api/register", "/api/login", "/api/posts").permitAll()
+                        .requestMatchers("/api/profile", "/api/posts/**", "/api/verify-password","/api/profile/update", "/api/profile/upload-picture").authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

@@ -13,6 +13,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.*;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,15 +67,8 @@ public class UserController {
         }
 
         String token = jwtUtil.generateToken(user.getUserId());
-
-        // ✅ userId 포함하여 응답
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("userId", user.getUserId()); // 🚀 userId 추가
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new JwtResponse(token));
     }
-
 
     @GetMapping("/auth/check")
     public ResponseEntity<?> checkAuth(@RequestHeader("Authorization") String token) {
@@ -88,6 +84,7 @@ public class UserController {
     }
 
     @GetMapping("/profile")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> getUserProfile(@RequestHeader("Authorization") String token) {
         try {
             String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
