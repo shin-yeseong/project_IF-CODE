@@ -41,6 +41,10 @@ public class UserController {
             return ResponseEntity.badRequest().body("이미 존재하는 학번입니다.");
         }
 
+        if (user.getIntroduction() == null || user.getIntroduction().trim().isEmpty()) {
+            user.setIntroduction("");
+        }
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
         return ResponseEntity.ok("회원가입이 완료되었습니다.");
@@ -92,6 +96,7 @@ public class UserController {
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
             response.put("phone", user.getPhone());
+            response.put("introduction", user.getIntroduction());
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -117,6 +122,9 @@ public class UserController {
             }
             if (updateData.containsKey("phone")) {
                 user.setPhone(updateData.get("phone"));
+            }
+            if (updateData.containsKey("introduction")) { // ✅ bio 업데이트 추가
+                user.setIntroduction(updateData.get("introduction"));
             }
             // ✅ 비밀번호 업데이트 추가
             if (updateData.containsKey("password") && !updateData.get("password").isEmpty()) {

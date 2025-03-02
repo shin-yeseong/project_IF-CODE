@@ -27,6 +27,10 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
+        if (user.getIntroduction() == null || user.getIntroduction().trim().isEmpty()) {
+            user.setIntroduction(""); // 기본값: 빈 문자열
+        }
+
         return userRepository.save(user);
     }
 }

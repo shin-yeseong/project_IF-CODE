@@ -36,5 +36,8 @@ public class User {
 
     @NotBlank(message = "개인정보 동의를 확인해주세요.")
     private String privacyConsent;
+
+    @Size(max = 200, message = "자기소개는 최대 200자까지 입력 가능합니다.")
+    private String introduction;
 }
 
