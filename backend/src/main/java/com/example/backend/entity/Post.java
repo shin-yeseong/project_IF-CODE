@@ -3,6 +3,7 @@ package com.example.backend.entity;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +14,6 @@ public class Post {
     @Id
     private String id;  // MongoDB의 `_id`는 String 타입이 일반적
 
-
-
     private String title;
     private String content;
     private String userId;   // 작성자 ID
@@ -23,6 +22,8 @@ public class Post {
     private LocalDateTime updatedAt; // 수정일
     private int views;
     private List<String> filePaths = new ArrayList<>();
+    private List<Comment> comments; // ✅ 댓글 리스트 추가
+
 
     // ✅ 생성자 추가 (createdAt, updatedAt 자동 설정)
     public Post(String title, String content, String userId, String userName) {
@@ -45,6 +46,11 @@ public class Post {
     public void updateTimestamp() {
         this.updatedAt = LocalDateTime.now();
     }
-
+    @Data
+    class Comment {
+        private String userName;
+        private String content;
+        private String createdAt;
+    }
     public Post(){}
 }

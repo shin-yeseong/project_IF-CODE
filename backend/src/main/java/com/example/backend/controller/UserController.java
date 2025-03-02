@@ -88,7 +88,6 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> getUserProfile(@RequestHeader("Authorization") String token) {
         try {
             String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));

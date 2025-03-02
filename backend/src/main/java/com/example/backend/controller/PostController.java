@@ -7,6 +7,7 @@ import com.example.backend.service.PostService;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.util.JwtUtil;
 import com.example.backend.service.FileService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,10 +19,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.Authentication;
+
 import org.springframework.web.multipart.MultipartFile;
+
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
