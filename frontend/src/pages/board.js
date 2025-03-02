@@ -35,9 +35,11 @@ const Board = () => {
   }, []);
 
   const totalPages = Math.ceil(posts.length / postsPerPage);
+  const reversedPosts = [...posts].reverse(); // 전체 데이터를 역순으로 정렬
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+  const currentPosts = reversedPosts.slice(indexOfFirstPost, indexOfLastPost); // 여기서 페이지네이션 적용
+
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -62,7 +64,7 @@ const Board = () => {
             <div className="w-1/12 py-2 px-4 text-center">조회수</div>
           </div>
 
-          {currentPosts.map((post, index) => (
+          {[...currentPosts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((post, index) => (
             <div key={post.id} className="flex border-t">
               <div className="w-1/12 py-2 px-4 text-center">{indexOfFirstPost + index + 1}</div>
               <div

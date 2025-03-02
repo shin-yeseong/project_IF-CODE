@@ -105,7 +105,7 @@ const MyPage = () => {
       setPasswordError("비밀번호는 8자 이상, 영문+숫자+특수문자를 포함해야 합니다.");
       return;
     } else if (updatedUserInfo.password !== confirmPassword) {
-      setPasswordError("비밀번호가 일치하지 않습니다.");git
+      setPasswordError("비밀번호가 일치하지 않습니다.");
       return;
     } else {
       setPasswordError(""); // 에러 메시지 초기화
@@ -230,8 +230,8 @@ const MyPage = () => {
                   </div>
                 </div>
                 <button
-                    className="mt-6 bg-purple-800 text-white px-4 py-2 rounded hover:bg-purple-900"
-                    onClick={() => setIsModalOpen(true)}
+                  className="mt-6 bg-purple-800 text-white px-4 py-2 rounded hover:bg-purple-900"
+                  onClick={() => setIsModalOpen(true)}
                 >
                   회원정보 수정
                 </button>
@@ -266,40 +266,40 @@ const MyPage = () => {
             <div className="mb-4">
               <label className="block">이름</label>
               <input
-                  type="text"
-                  name="username"
-                  value={updatedUserInfo.username}
-                  onChange={handleInputChange}
-                  className="border p-2 w-full"
+                type="text"
+                name="username"
+                value={updatedUserInfo.username}
+                onChange={handleInputChange}
+                className="border p-2 w-full"
               />
             </div>
             <div className="mb-4">
               <label className="block">이메일</label>
               <input
-                  type="email"
-                  name="email"
-                  value={updatedUserInfo.email}
-                  onChange={handleInputChange}
-                  className="border p-2 w-full"
+                type="email"
+                name="email"
+                value={updatedUserInfo.email}
+                onChange={handleInputChange}
+                className="border p-2 w-full"
               />
             </div>
             <div className="mb-4">
               <label className="block">전화번호</label>
               <input
-                  type="text"
-                  name="phone"
-                  value={updatedUserInfo.phone}
-                  onChange={handleInputChange}
-                  className="border p-2 w-full"
+                type="text"
+                name="phone"
+                value={updatedUserInfo.phone}
+                onChange={handleInputChange}
+                className="border p-2 w-full"
               />
             </div>
             <div className="mb-4">
               <label className="block">자기소개</label>
               <textarea
-                  name="introduction"
-                  value={updatedUserInfo.introduction}
-                  onChange={handleInputChange}
-                  className="border p-2 w-full h-20 resize-none"
+                name="introduction"
+                value={updatedUserInfo.introduction}
+                onChange={handleInputChange}
+                className="border p-2 w-full h-20 resize-none"
               />
             </div>
 
@@ -307,11 +307,11 @@ const MyPage = () => {
             <div className="mb-4">
               <label className="block">새 비밀번호</label>
               <input
-                  type="password"
-                  name="password"
-                  value={updatedUserInfo.password}
-                  onChange={handleInputChange}
-                  className="border p-2 w-full"
+                type="password"
+                name="password"
+                value={updatedUserInfo.password}
+                onChange={handleInputChange}
+                className="border p-2 w-full"
               />
             </div>
 
@@ -319,10 +319,10 @@ const MyPage = () => {
             <div className="mb-4">
               <label className="block">비밀번호 확인</label>
               <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="border p-2 w-full"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="border p-2 w-full"
               />
             </div>
 
@@ -330,8 +330,8 @@ const MyPage = () => {
             {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
 
             <button
-                className="bg-purple-800 text-white px-4 py-2 rounded w-full"
-                onClick={handleSaveChanges}
+              className="bg-purple-800 text-white px-4 py-2 rounded w-full"
+              onClick={handleSaveChanges}
             >
               수정 저장
             </button>
@@ -342,7 +342,7 @@ const MyPage = () => {
         </div>
       )}
 
-      <Footer/>
+      <Footer />
     </>
   );
 };

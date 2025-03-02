@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/header";
 
 const Post = () => {
@@ -7,6 +8,7 @@ const Post = () => {
     const [content, setContent] = useState("");
     const [file, setFile] = useState(null);
     const [message, setMessage] = useState("");
+    const navigate = useNavigate();
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -43,6 +45,7 @@ const Post = () => {
             setTitle("");
             setContent("");
             setFile(null);
+            navigate('/board');
         } catch (error) {
             console.error("❌ 게시글 작성 실패:", error);
             alert("게시글 작성 중 오류 발생!");

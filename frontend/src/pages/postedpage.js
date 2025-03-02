@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import Header from "../components/header";
+import CommentList from "../components/commentlist";
 
 const PostedPage = () => {
     const { id } = useParams();
@@ -72,6 +73,8 @@ const PostedPage = () => {
                         </div>
                     )}
                 </div>
+                <CommentList postId={id} />
+
             </div >
         </>
     );
