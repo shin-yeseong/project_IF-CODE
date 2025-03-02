@@ -68,7 +68,6 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register.html", "/post.html").permitAll()
                         .requestMatchers("/api/register", "/api/login", "/api/posts").permitAll()
                         .requestMatchers("/api/profile", "/api/posts/**", "/api/verify-password","/api/profile/update").authenticated()
                 )
@@ -80,7 +79,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtil, userDetailsService);  // 이미 주입된 userDetailsService 사용
+        return new JwtAuthenticationFilter(jwtUtil, userDetailsService);
 
 
     }

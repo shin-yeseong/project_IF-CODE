@@ -29,4 +29,6 @@ public class Post {
         this.updatedAt = LocalDateTime.now();
         this.views = 0;
     }
+
+    public Post(){}
 }
