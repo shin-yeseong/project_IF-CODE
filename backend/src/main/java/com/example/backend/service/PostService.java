@@ -1,5 +1,6 @@
 package com.example.backend.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.example.backend.entity.Post;
@@ -14,8 +15,11 @@ import com.example.backend.exception.UnauthorizedException;
 @Service
 public class PostService {
 
-    private final PostRepository postRepository;
-
+    @Autowired
+    private PostRepository postRepository;
+    public Post save(Post post) {
+        return postRepository.save(post);
+    }
     public PostService(PostRepository postRepository) {
         this.postRepository = postRepository;
     }
