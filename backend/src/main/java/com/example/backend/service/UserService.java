@@ -31,6 +31,10 @@ public class UserService {
             user.setIntroduction(""); // 기본값: 빈 문자열
         }
 
+        if (user.getProfilePictureUrl() == null || user.getProfilePictureUrl().trim().isEmpty()) {
+            user.setProfilePictureUrl("/default-profile.png"); // 기본 프로필 이미지 경로
+        }
+
         return userRepository.save(user);
     }
 }

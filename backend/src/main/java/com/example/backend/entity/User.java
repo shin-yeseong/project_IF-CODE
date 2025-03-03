@@ -44,7 +44,6 @@ public class User {
     @Size(max = 200, message = "자기소개는 최대 200자까지 입력 가능합니다.")
     private String introduction;
 
-    private String profilePicture;
     private String profilePictureUrl;
 
     public String getProfilePictureUrl() {
