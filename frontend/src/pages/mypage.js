@@ -47,7 +47,8 @@ const MyPage = () => {
           console.log("프로필 데이터 가져옴:", data);
 
           setUser(data);
-          setProfilePicture(data.profilePictureUrl); // ✅ 업로드된 사진으로 상태 업데이트
+          setProfilePicture(data.profilePictureUrl || "http://localhost:8080/default-profile.png");
+
           setUpdatedUserInfo({
             username: data.username,
             email: data.email,
@@ -92,7 +93,7 @@ const MyPage = () => {
         console.log("업로드 응답 데이터:", data);
 
         if (data.profilePictureUrl) {
-          setProfilePicture(data.profilePictureUrl);
+          setProfilePicture(data.profilePictureUrl || "http://localhost:8080/default-profile.png");
           setUser((prev) => ({ ...prev, profilePictureUrl: data.profilePictureUrl })); // ✅ UI 반영
         } else {
           console.error("업로드 응답에 profilePictureUrl 없음:", data);
@@ -209,7 +210,7 @@ const MyPage = () => {
                 {/* 🔹 프로필 사진 */}
                 <label htmlFor="profile-upload" className="cursor-pointer">
                   <img
-                      src={profilePicture}
+                      src={profilePicture ? `http://localhost:8080${profilePicture}` : "http://localhost:8080/default-profile.png"}
                       alt="profile"
                       className="w-24 h-24 rounded-full border-2 border-gray-400"
                   />
