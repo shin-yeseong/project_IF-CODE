@@ -77,7 +77,13 @@ public class UserController {
         }
 
         String token = jwtUtil.generateToken(user.getUserId());
-        return ResponseEntity.ok(new JwtResponse(token));
+        // ✅ userId를 포함한 응답 반환
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("userId", user.getUserId());  // 추가
+        response.put("username", user.getUsername()); // 추가 (옵션)
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/auth/check")
