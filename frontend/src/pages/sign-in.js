@@ -21,9 +21,21 @@ function Signin() {
         { withCredentials: true }
       );
 
-      console.log("✅ 로그인 성공!", response.data);
+      console.log("✅ 로그인 성공! 응답 데이터:", response.data);
+
+      // ✅ 응답 데이터에서 userId 확인
+      const userIdFromResponse = response.data.userId;
+      if (!userIdFromResponse) {
+        console.error("❌ userId가 응답 데이터에 없음:", response.data);
+        setError("로그인에 실패했습니다. 관리자에게 문의하세요.");
+        return;
+      }
+
+      // ✅ localStorage에 저장
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("userId", response.data.userId);
+      localStorage.setItem("userId", userIdFromResponse);
+
+      console.log("📢 저장된 userId:", localStorage.getItem("userId"));
 
       navigate("/");
     } catch (err) {
@@ -31,6 +43,7 @@ function Signin() {
       setError("이메일 또는 비밀번호가 잘못되었습니다.");
     }
   };
+
 
   return (
     <>
