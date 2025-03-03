@@ -230,7 +230,10 @@ public class UserController {
             user.setProfilePictureUrl(fileUrl);
             userRepository.save(user);
 
-            return ResponseEntity.ok(Map.of("message", "프로필 사진이 업로드되었습니다.", "pictureUrl", filePath.toString()));
+            return ResponseEntity.ok(Map.of(
+                    "message", "프로필 사진이 업로드되었습니다.",
+                    "profilePictureUrl", fileUrl // ✅ 기존 pictureUrl → profilePictureUrl로 변경
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드 실패");
         }
