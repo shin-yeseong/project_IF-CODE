@@ -23,9 +23,10 @@ public class JwtUtil {
         System.out.println("JWT Secret Key: " + secretKey);
     }
 
-    public String generateToken(String email) {
+    public String generateToken(String userId) {
+        System.out.println("📢 JWT 생성 중, userId: " + userId); // ✅ 디버깅 추가
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -33,14 +34,21 @@ public class JwtUtil {
     }
 
     public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();  // 여기서 userId 가져옴
-    }
+        try {
+            String userId = Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
 
+            System.out.println("📢 JWT에서 추출된 userId: " + userId); // ✅ 디버깅 추가
+            return userId;
+        } catch (Exception e) {
+            System.out.println("❌ JWT 파싱 오류: " + e.getMessage());
+            return null;
+        }
+    }
     public boolean validateToken(String token, UserDetails userDetails) {
         try {
             Claims claims = Jwts.parser()
