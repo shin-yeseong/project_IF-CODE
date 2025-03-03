@@ -32,11 +32,11 @@ function Header() {
           <div className="sidebar-content">
             <h2>MENU</h2>
             <ul>
-              <li><a href="introduction.html">Introduction</a></li>
+              <li><Link to={"/introduction"}>Introduction</Link></li>
               <li><a href="majorguide.html">Major Guide</a></li>
               <li><Link to={"/board"}>Algorithm Study</Link></li>
               <li><a href="competition.html">Competitions</a></li>
-              <li><a href="careerpath.html">Career Path</a></li>
+              <li><Link to={"/careerpath"}>Career Path</Link></li>
             </ul>
           </div>
         </div>

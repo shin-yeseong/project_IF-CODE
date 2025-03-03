@@ -8,6 +8,8 @@ import Post from "./pages/post";
 import Board from "./pages/board";
 import PostedPage from "./pages/postedpage";
 import EditPost from "./pages/editpost";
+import Introduction from "./pages/introduction";
+import CareerPath from "./pages/careerpath";
 import "./index.css";
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         <Route path="/board" element={<Board />} />
         <Route path="/post/:id" element={<PostedPage />} />
         <Route path="/editpost/:id" element={<EditPost />} />
+        <Route path="/introduction" element={<Introduction/>}/>
+        <Route path="/careerpath" element={<CareerPath/>}/>
       </Routes>
     </Router>
   );
