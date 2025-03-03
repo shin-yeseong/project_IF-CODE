@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import moment from "moment"; // ✅ 날짜 포맷 라이브러리 추가 (npm install moment)
+import moment from "moment";
 
 const CommentList = ({ postId }) => {
     const [comments, setComments] = useState([]);
@@ -9,17 +9,30 @@ const CommentList = ({ postId }) => {
 
     useEffect(() => {
         fetchComments();
-        fetchUsername();
-    }, []);
+        if (!username) {
+            fetchUsername();
+        }
+    }, [username]); // username이 없을 때만 호출
 
     const fetchComments = async () => {
         try {
-            const response = await axios.get(`http://localhost:8080/api/comments/${postId}`);
+            const token = localStorage.getItem("token"); // ✅ 토큰 가져오기
+            if (!token) {
+                console.error("❌ 로그인 토큰 없음");
+                return;
+            }
+
+            const response = await axios.get(`http://localhost:8080/api/comments/${postId}`, {
+                headers: { Authorization: `Bearer ${token}` }, // ✅ JWT 추가
+                withCredentials: true, // ✅ 인증 쿠키 포함 (필요할 경우)
+            });
+
             setComments(response.data);
         } catch (error) {
             console.error("❌ 댓글 불러오기 실패:", error);
         }
     };
+
 
     const fetchUsername = async () => {
         try {
@@ -29,14 +42,11 @@ const CommentList = ({ postId }) => {
                 return;
             }
 
-            console.log("📢 요청할 JWT 토큰:", token);
-
             const response = await axios.get("http://localhost:8080/api/profile", {
                 headers: { Authorization: `Bearer ${token}` },
                 withCredentials: true,
             });
 
-            console.log("📢 사용자 정보:", response.data);
             setUsername(response.data.username);
         } catch (error) {
             console.error("❌ 사용자 정보 가져오기 실패:", error);
@@ -71,7 +81,16 @@ const CommentList = ({ postId }) => {
 
     const handleDeleteComment = async (commentId) => {
         try {
-            await axios.delete(`http://localhost:8080/api/comments/${commentId}`);
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            await axios.delete(`http://localhost:8080/api/comments/${commentId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
             setComments(comments.filter((comment) => comment.id !== commentId));
         } catch (error) {
             console.error("❌ 댓글 삭제 실패:", error);
@@ -92,9 +111,11 @@ const CommentList = ({ postId }) => {
                                     {moment(comment.createdAt).format("YYYY년 MM월 DD일 HH:mm")}
                                 </p>
                             </div>
-                            <button onClick={() => handleDeleteComment(comment.id)} className="text-red-500">
-                                삭제
-                            </button>
+                            {comment.userName === username && (
+                                <button onClick={() => handleDeleteComment(comment.id)} className="text-red-500">
+                                    삭제
+                                </button>
+                            )}
                         </div>
                         <p className="mt-1">{comment.content}</p>
                     </div>
