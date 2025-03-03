@@ -163,7 +163,6 @@ const MyPage = () => {
         setPasswordError(""); // 에러 메시지 초기화
       }
 
-
       try {
         const response = await fetch("http://localhost:8080/api/profile/update", {
           method: "PUT",
