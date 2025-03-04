@@ -110,12 +110,17 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
             }
 
+            String profilePictureUrl = user.getProfilePictureUrl() != null ? user.getProfilePictureUrl() : "/default-profile.png";
+
+
             Map<String, Object> response = new HashMap<>();
             response.put("userId", user.getUserId());
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
             response.put("phone", user.getPhone());
             response.put("introduction", user.getIntroduction());
+            response.put("profilePictureUrl", profilePictureUrl);
+
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -226,13 +231,13 @@ public class UserController {
             }
 
             // 사용자 정보 업데이트
-            String fileUrl = "/uploads/profile_pictures/" + fileName; // URL로 저장
+            String fileUrl = "http://localhost:8080/uploads/profile_pictures/" + fileName;
             user.setProfilePictureUrl(fileUrl);
             userRepository.save(user);
 
             return ResponseEntity.ok(Map.of(
                     "message", "프로필 사진이 업로드되었습니다.",
-                    "profilePictureUrl", fileUrl // ✅ 기존 pictureUrl → profilePictureUrl로 변경
+                    "profilePictureUrl", fileUrl
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드 실패");
