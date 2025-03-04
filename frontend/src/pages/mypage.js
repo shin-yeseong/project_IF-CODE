@@ -1,12 +1,117 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/header";
 import Footer from "../components/footer";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+
+const ItemType = "COURSE";
+
+// 초기 과목 리스트 (필수 과목은 required: true)
+const initialCourses = [
+  { id: 1, name: "융합프로그래밍", required: true },
+  { id: 2, name: "자료구조", required: true },
+  { id: 3, name: "알고리즘", required: true },
+  { id: 4, name: "컴퓨터시스템", required: true },
+  { id: 5, name: "오픈소스소프트웨어프로젝트", required: true },
+  { id: 6, name: "융합캡스톤디자인", required: true },
+  { id: 7, name: "파이썬프로그래밍", required: false },
+  { id: 8, name: "융합어드벤처디자인", required: false },
+  { id: 9, name: "데이터사이언스개론", required: false },
+  { id: 10, name: "데이터베이스", required: false },
+  { id: 11, name: "머신러닝과데이터사이언스", required: false },
+  { id: 12, name: "데이터사이언스를위한파이썬프로그래밍", required: false },
+  { id: 13, name: "웹프론트엔드", required: false },
+  { id: 14, name: "웹백엔드", required: false },
+  { id: 15, name: "모바일프로그래밍", required: false },
+  { id: 16, name: "인공지능입문", required: false },
+  { id: 17, name: "오픈소스소프트웨어실습", required: false },
+  { id: 18, name: "사물인터넷개론", required: false },
+  { id: 19, name: "머신러닝및딥러닝", required: false },
+  { id: 20, name: "컴퓨터네트워크및보안", required: false },
+];
+
+// ✅ 초기 학기 상태
+const initialSemesters = {
+  "1-1": [],
+  "1-2": [],
+  "2-1": [],
+  "2-2": [],
+  "3-1": [],
+  "3-2": [],
+  "4-1": [],
+  "4-2": [],
+};
+
+
+function Course({ course }) {
+  const [{ isDragging }, drag] = useDrag({
+    type: "COURSE",
+    item: { course },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  });
+
+  return (
+    <div
+      ref={drag}
+      className={`flex justify-center items-center text-white rounded-md cursor-pointer transition-all 
+        px-3 py-1 text-xs 
+        ${course.required ? "bg-purple-800" : "bg-gray-500"} 
+        ${isDragging ? "opacity-50 scale-105" : "opacity-100"} `}
+    >
+      <span className="truncate w-full text-center px-2">{course.name}</span>
+    </div>
+  );
+}
+function CourseList({ availableCourses, moveCourse }) {
+  const [, drop] = useDrop({
+    accept: "COURSE",
+    drop: (item) => moveCourse(item.course, "remove"),
+  });
+
+  return (
+    <div ref={drop} className="flex flex-wrap gap-1 mt-4 bg-gray-200 p-2 rounded-md min-h-12">
+      {availableCourses.map((course) => (
+        <Course key={course.id} course={course} />
+      ))}
+    </div>
+  );
+}
+
+
+// ✅ 학기별 칸 (드롭 가능)
+function Semester({ semester, courses, moveCourse }) {
+  const [, drop] = useDrop({
+    accept: "COURSE",
+    drop: (item) => moveCourse(item.course, semester),
+  });
+
+  return (
+    <div
+      ref={drop}
+      className="w-40 min-h-32 border border-gray-400 flex flex-col gap-1 items-center bg-gray-100 m-2 rounded-lg p-2 overflow-auto"
+    >
+      <strong className="text-sm">{semester}</strong>
+      <div className="flex flex-col w-full gap-1 items-center">
+        {courses.map((course) => (
+          <Course key={course.id} course={course} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 
 const MyPage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedMenu, setSelectedMenu] = useState("개인정보");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [semesters, setSemesters] = useState(initialSemesters);
+  const [totalCredits, setTotalCredits] = useState({ required: 0, elective: 0 });
+  const [availableCourses, setAvailableCourses] = useState(initialCourses);
   const [password, setPassword] = useState("");
   const [isVerified, setIsVerified] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -64,6 +169,59 @@ const MyPage = () => {
     };
     fetchUserProfile();
   }, []);
+
+  const moveCourse = (course, semester) => {
+    setSemesters((prev) => {
+      const newSemesters = { ...prev };
+
+      // 기존 학기에서 과목 제거
+      Object.keys(newSemesters).forEach((key) => {
+        newSemesters[key] = newSemesters[key].filter((c) => c.id !== course.id);
+      });
+
+      if (semester === "remove") {
+        // ✅ 중복 방지: 이미 위 리스트에 있는지 확인 후 추가
+        setAvailableCourses((prev) => {
+          const alreadyExists = prev.some((c) => c.id === course.id);
+          return alreadyExists ? prev : [...prev, course];
+        });
+      } else {
+        newSemesters[semester] = [...newSemesters[semester], course];
+      }
+
+      // ✅ 학점 업데이트 유지
+      updateCredits(newSemesters);
+
+      return newSemesters;
+    });
+
+    if (semester !== "remove") {
+      setAvailableCourses((prev) => prev.filter((c) => c.id !== course.id));
+    }
+  };
+
+
+
+  const updateCredits = (semesters) => {
+    let newTotal = { required: 0, elective: 0 };
+
+    // 모든 학기별 과목을 다시 검사
+    Object.values(semesters).forEach((courses) => {
+      courses.forEach((c) => {
+        if (c.required) {
+          newTotal.required += 3; // 필수 과목은 3학점
+        } else {
+          newTotal.elective += 3; // 선택 과목도 3학점
+        }
+      });
+    });
+
+    setTotalCredits(newTotal);
+  };
+
+
+
+
 
   const handleProfilePictureChange = async (event) => {
     const file = event.target.files[0];
@@ -206,7 +364,7 @@ const MyPage = () => {
           </p>
         </div>
 
-        <div className="w-full max-w-6xl max-h-96 flex bg-white text-black rounded-lg shadow-lg overflow-hidden">
+        <div className="w-full flex bg-white text-black rounded-lg shadow-lg overflow-visible">
           {/* 왼쪽 메뉴 */}
           <div className="w-1/3 bg-gray-100 p-6 flex flex-col items-center">
             {/* 🔹 프로필 사진 */}
@@ -248,6 +406,13 @@ const MyPage = () => {
                   onClick={() => setSelectedMenu("내 메모")}
                 >
                   내 메모
+                </li>
+
+                <li
+                  className={`cursor-pointer ${selectedMenu === "학점 관리" ? "text-purple-800 font-semibold" : "text-gray-600 hover:text-purple-800"}`}
+                  onClick={() => setSelectedMenu("학점 관리")}
+                >
+                  학점 관리
                 </li>
                 <li className="text-red-600 cursor-pointer hover:text-red-800">회원탈퇴</li>
               </ul>
@@ -315,6 +480,29 @@ const MyPage = () => {
                 <p className="mt-4 text-gray-600">사용자의 메모 목록이 표시됩니다.</p>
                 {/* TODO: 실제 메모 목록을 불러와 표시 */}
               </>
+            )}
+
+            {selectedMenu === "학점 관리" && (
+              <DndProvider backend={HTML5Backend}>
+                <h2 className="text-2xl font-bold text-purple-800">📚 학점 관리</h2>
+
+
+
+                <CourseList availableCourses={availableCourses} moveCourse={moveCourse} />
+
+
+
+                {/* 학기별 드롭 박스 */}
+                <div className="grid grid-cols-4 gap-4 mt-4">
+                  {Object.keys(semesters).map((sem) => (
+                    <Semester key={sem} semester={sem} courses={semesters[sem]} moveCourse={moveCourse} />
+                  ))}
+                </div>
+
+                <h3 className="mt-4 text-black">
+                  총 이수 학점: {totalCredits.required + totalCredits.elective}학점 (필수 {totalCredits.required}학점 / 선택 {totalCredits.elective}학점)
+                </h3>
+              </DndProvider>
             )}
           </div>
         </div>
