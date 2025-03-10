@@ -510,8 +510,8 @@ const MyPage = () => {
 
       {/* 🔹 회원정보 수정 모달 */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto sm:mt-10">
             <h2 className="text-xl font-bold text-gray-800 mb-4">회원정보 수정</h2>
 
             <label className="block mb-4 cursor-pointer">
