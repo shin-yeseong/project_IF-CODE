@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Getter;
 import lombok.Setter;
 
-@Document(collection = "users") 
+@Document(collection = "users")
 @Data
 @Getter
 @Setter
@@ -23,7 +23,7 @@ public class User {
     private String userId;
 
     @NotBlank(message = "비밀번호를 입력하세요.")
-    @Size(min = 8, max = 16, message = "비밀번호 형식이 올바르지 않습니다.")
+    @Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다.")
     private String password;
 
     @NotBlank(message = "이름(닉네임)을 입력해주세요.")
@@ -46,6 +46,8 @@ public class User {
 
     private String profilePictureUrl;
 
+    private String role = "USER";
+
     public String getProfilePictureUrl() {
         return profilePictureUrl;
     }
@@ -54,4 +56,3 @@ public class User {
         this.profilePictureUrl = profilePictureUrl;
     }
 }
-

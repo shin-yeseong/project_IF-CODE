@@ -4,24 +4,22 @@ import com.example.backend.dto.JwtResponse;
 import com.example.backend.dto.LoginRequest;
 import com.example.backend.entity.User;
 import com.example.backend.repository.UserRepository;
-import com.example.backend.util.JwtUtil;
+import com.example.backend.security.JwtUtil;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
-
-
-import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.*;
-
 
 import java.util.HashMap;
 import java.net.URI;
@@ -31,66 +29,66 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final AuthenticationManager authenticationManager;
-    private static final String UPLOAD_DIR = "uploads/profile_pictures/";
     private static final String DEFAULT_PROFILE_PICTURE = "/default-profile.png"; // ✅ 디폴트 사진 경로
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuthenticationManager authenticationManager) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
-        this.authenticationManager = authenticationManager;
-    }
-
-    //
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody User user) {
-        if (userRepository.existsByUserId(user.getUserId())) {
-            return ResponseEntity.badRequest().body("이미 존재하는 학번입니다.");
+    public ResponseEntity<?> register(@RequestBody User user) {
+        if (userRepository.findByUserId(user.getUserId()).isPresent()) {
+            return ResponseEntity.badRequest().body("이미 존재하는 사용자 ID입니다.");
         }
-
-        if (user.getIntroduction() == null || user.getIntroduction().trim().isEmpty()) {
-            user.setIntroduction("");
-        }
-
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
         return ResponseEntity.ok("회원가입이 완료되었습니다.");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
-        User user = userRepository.findByUserId(loginRequest.getUserId());
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+        try {
+            System.out.println("로그인 요청 받음 - userId: " + loginRequest.getUserId() + ", password length: "
+                    + loginRequest.getPassword().length());
 
-        if (user == null) {
-            return ResponseEntity.badRequest().body("학번 또는 비밀번호가 잘못되었습니다.");
+            User user = userRepository.findByUserId(loginRequest.getUserId())
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+            System.out.println("사용자 찾음: " + user.getUserId() + ", 저장된 비밀번호 길이: " + user.getPassword().length());
+
+            boolean matches = passwordEncoder.matches(loginRequest.getPassword(), user.getPassword());
+            System.out.println("비밀번호 일치 여부: " + matches);
+
+            if (!matches) {
+                return ResponseEntity.badRequest().body("비밀번호가 일치하지 않습니다.");
+            }
+
+            String token = jwtUtil.generateToken(user.getUserId());
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("userId", user.getUserId());
+            response.put("username", user.getUsername());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            System.out.println("로그인 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.out.println("로그인 실패: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("로그인 처리 중 오류가 발생했습니다.");
         }
-
-        boolean isPasswordMatch = passwordEncoder.matches(loginRequest.getPassword(), user.getPassword());
-        if (!isPasswordMatch) {
-            return ResponseEntity.badRequest().body("학번 또는 비밀번호가 잘못되었습니다.");
-        }
-
-        String token = jwtUtil.generateToken(user.getUserId());
-        // ✅ userId를 포함한 응답 반환
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("userId", user.getUserId());  // 추가
-        response.put("username", user.getUsername()); // 추가 (옵션)
-
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/auth/check")
     public ResponseEntity<?> checkAuth(@RequestHeader("Authorization") String token) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            if (userRepository.findByUserId(userId) == null) {
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
             }
             return ResponseEntity.ok(Map.of("valid", true));
@@ -100,39 +98,33 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getUserProfile(@RequestHeader("Authorization") String token) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getProfile(@RequestHeader("Authorization") String token) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            User user = userRepository.findByUserId(userId);
-
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            if (userId == null || userId.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 요청입니다.");
             }
 
-            String profilePictureUrl = user.getProfilePictureUrl() != null ? user.getProfilePictureUrl() : "/default-profile.png";
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("userId", user.getUserId());
-            response.put("username", user.getUsername());
-            response.put("email", user.getEmail());
-            response.put("phone", user.getPhone());
-            response.put("introduction", user.getIntroduction());
-            response.put("profilePictureUrl", profilePictureUrl);
-
-
-            return ResponseEntity.ok(response);
+            // 비밀번호는 제외하고 반환
+            user.setPassword(null);
+            return ResponseEntity.ok(user);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("프로필 정보를 가져오는 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 
     @PutMapping("/profile/update")
-    public ResponseEntity<?> updateUserProfile(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> updateData) {
+    public ResponseEntity<?> updateUserProfile(@RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> updateData) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            User user = userRepository.findByUserId(userId);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
@@ -165,8 +157,9 @@ public class UserController {
     @DeleteMapping("/profile/delete")
     public ResponseEntity<?> deleteUser(@RequestHeader("Authorization") String token) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            User user = userRepository.findByUserId(userId);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
@@ -180,10 +173,12 @@ public class UserController {
     }
 
     @PostMapping("/verify-password")
-    public ResponseEntity<?> verifyPassword(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> verifyPassword(@RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> request) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            User user = userRepository.findByUserId(userId);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
@@ -208,8 +203,9 @@ public class UserController {
             @RequestHeader("Authorization") String token,
             @RequestParam("file") MultipartFile file) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            User user = userRepository.findByUserId(userId);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
@@ -221,40 +217,49 @@ public class UserController {
 
             // 파일 저장 경로 설정
             String fileName = userId + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(UPLOAD_DIR + fileName);
-            Files.createDirectories(filePath.getParent());
+            Path uploadDir = Paths.get("uploads/profile_pictures");
+            Files.createDirectories(uploadDir);
+            Path filePath = uploadDir.resolve(fileName);
             Files.write(filePath, file.getBytes());
 
             // 기존 픽쳐 삭제 (있다면)
             if (user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().equals(DEFAULT_PROFILE_PICTURE)) {
-                Files.deleteIfExists(Paths.get(user.getProfilePictureUrl()));
+                try {
+                    Path oldFilePath = Paths.get(user.getProfilePictureUrl().replace("http://localhost:8080/", ""));
+                    Files.deleteIfExists(oldFilePath);
+                } catch (Exception e) {
+                    System.err.println("기존 파일 삭제 실패: " + e.getMessage());
+                }
             }
 
             // 사용자 정보 업데이트
-            String fileUrl = "http://localhost:8080/uploads/profile_pictures/" + fileName;
+            String fileUrl = "/uploads/profile_pictures/" + fileName;
             user.setProfilePictureUrl(fileUrl);
             userRepository.save(user);
 
             return ResponseEntity.ok(Map.of(
                     "message", "프로필 사진이 업로드되었습니다.",
-                    "profilePictureUrl", fileUrl
-            ));
+                    "profilePictureUrl", fileUrl));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드 실패");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("파일 업로드 실패: " + e.getMessage());
         }
     }
 
     @GetMapping("/profile/picture")
     public ResponseEntity<Resource> getProfilePicture(@RequestHeader("Authorization") String token) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            User user = userRepository.findByUserId(userId);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
 
-            String picturePath = (user.getProfilePictureUrl() != null) ? user.getProfilePictureUrl() : DEFAULT_PROFILE_PICTURE;
+            String picturePath = (user.getProfilePictureUrl() != null) ? user.getProfilePictureUrl()
+                    : DEFAULT_PROFILE_PICTURE;
 
             // ✅ 기본 프로필 이미지인 경우 static 폴더에서 직접 제공
             if (picturePath.equals(DEFAULT_PROFILE_PICTURE)) {
@@ -280,8 +285,9 @@ public class UserController {
     @DeleteMapping("/profile/delete-picture")
     public ResponseEntity<?> deleteProfilePicture(@RequestHeader("Authorization") String token) {
         try {
-            String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-            User user = userRepository.findByUserId(userId);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
@@ -300,6 +306,4 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("이미지 삭제 실패");
         }
     }
-
-
 }

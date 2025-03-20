@@ -11,15 +11,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import com.example.backend.exception.UnauthorizedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @Service
 public class PostService {
 
     @Autowired
     private PostRepository postRepository;
+
     public Post save(Post post) {
         return postRepository.save(post);
     }
+
     public PostService(PostRepository postRepository) {
         this.postRepository = postRepository;
     }
@@ -34,11 +39,12 @@ public class PostService {
     }
 
     public List<Post> getPostsByUser(String userId) {
-        return postRepository.findByUserId(userId);
+        return postRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    public List<Post> getAllPosts() {
-        return postRepository.findAll();
+    public Page<Post> getAllPosts(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return postRepository.findAllByOrderByCreatedAtDesc(pageRequest);
     }
 
     public Optional<Post> updatePost(String postId, String title, String content, String userId) {

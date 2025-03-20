@@ -1,14 +1,14 @@
 package com.example.backend.controller;
 
-
 import com.example.backend.entity.Post;
+import com.example.backend.entity.User;
 import com.example.backend.repository.PostRepository;
-import com.example.backend.service.PostService;
 import com.example.backend.repository.UserRepository;
-import com.example.backend.util.JwtUtil;
+import com.example.backend.security.JwtUtil;
+import com.example.backend.service.PostService;
 import com.example.backend.service.FileService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,65 +22,85 @@ import java.time.LocalDateTime;
 
 import org.springframework.web.multipart.MultipartFile;
 
-
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/posts")
+@RequiredArgsConstructor
 public class PostController {
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private PostRepository postRepository;
-
+    private final JwtUtil jwtUtil;
+    private final PostRepository postRepository;
     private final PostService postService;
-    private final UserRepository userRepository; // ✅ UserRepository 추가
+    private final UserRepository userRepository;
     private final FileService fileService;
-    public PostController(PostService postService, UserRepository userRepository, FileService fileService) {
-        this.postService = postService;
-        this.userRepository = userRepository;
-        this.fileService = fileService;
-    }
 
     @GetMapping
-    public ResponseEntity<List<Post>> getAllPosts() {
-        List<Post> posts = postService.getAllPosts();
-        System.out.println("📢 전체 게시글 조회 결과: " + posts);
+    public ResponseEntity<?> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<Post> posts = postService.getAllPosts(page, size);
         return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/my-posts")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getMyPosts(@RequestHeader("Authorization") String token) {
+        try {
+            System.out.println("📢 마이페이지 요청 받음 - 토큰: " + token);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            System.out.println("📢 JWT에서 추출된 userId: " + userId);
+
+            if (userId == null || userId.isEmpty()) {
+                System.out.println("❌ JWT에서 userId 추출 실패!");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 요청입니다.");
+            }
+
+            List<Post> myPosts = postService.getPostsByUser(userId);
+            System.out.println("📢 사용자의 게시글 수: " + myPosts.size());
+            return ResponseEntity.ok(myPosts);
+        } catch (Exception e) {
+            System.out.println("❌ 마이페이지 요청 처리 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("게시글을 가져오는 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createPost(
             @RequestParam("title") String title,
             @RequestParam("content") String content,
-            @RequestParam(value = "userName", required = false) String userName,  // ✅ null 방지!
+            @RequestParam(value = "userName", required = false) String userName,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestHeader("Authorization") String token) {
+        try {
+            System.out.println("📢 게시글 작성 요청, 받은 토큰: " + token);
 
-        String userId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-        System.out.println("📢 요청받은 사용자 ID: " + userId);
-        System.out.println("📢 요청받은 사용자 이름 (전송된 값): " + userName);
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            System.out.println("📢 JWT에서 추출된 userId: " + userId);
 
-        if (userId == null || userId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("인증된 사용자가 아닙니다.");
+            if (userId == null || userId.isEmpty()) {
+                System.out.println("❌ JWT에서 userId 추출 실패!");
+                return ResponseEntity.status(403).body("❌ 인증 실패: 유효하지 않은 토큰");
+            }
+
+            if (userName == null || userName.isEmpty()) {
+                userName = userRepository.findByUserId(userId)
+                        .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."))
+                        .getUsername();
+            }
+
+            System.out.println("📢 최종 저장될 사용자 이름: " + userName);
+
+            Post post = new Post(title, content, userId, userName);
+            post.setCreatedAt(LocalDateTime.now());
+            postRepository.save(post);
+
+            return ResponseEntity.ok("게시글 작성 성공!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 작성 중 오류가 발생했습니다.");
         }
-
-        // 🔥 userName이 null이면 DB에서 가져오도록 변경!
-        if (userName == null || userName.isEmpty()) {
-            userName = userRepository.findByUserId(userId).getUsername();
-        }
-
-        System.out.println("📢 최종 저장될 사용자 이름: " + userName);
-
-        // 게시글 저장 로직
-        Post post = new Post(title, content, userId, userName);
-        post.setCreatedAt(LocalDateTime.now());
-        postRepository.save(post);
-
-        return ResponseEntity.ok("게시글 작성 성공!");
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePost(
@@ -99,27 +119,22 @@ public class PostController {
         post.setTitle(title);
         post.setContent(content);
 
-        // ✅ 파일 삭제 (사용자가 삭제 요청한 파일)
         if (deleteFilePaths != null && !deleteFilePaths.isEmpty()) {
-            fileService.deleteFiles(deleteFilePaths);  // 실제 파일 삭제
-            post.getFilePaths().removeAll(deleteFilePaths); // DB에서도 제거
+            fileService.deleteFiles(deleteFilePaths);
+            post.getFilePaths().removeAll(deleteFilePaths);
         }
 
-        // ✅ 새로 업로드된 파일 저장 (files가 null이 아닌지 확인!)
         if (files != null && !files.isEmpty()) {
-            List<String> newFilePaths = fileService.saveFiles(files); // 🚀 오류 해결됨!
-            post.getFilePaths().addAll(newFilePaths); // 기존 파일 목록에 추가
+            List<String> newFilePaths = fileService.saveFiles(files);
+            post.getFilePaths().addAll(newFilePaths);
         }
 
-        // ✅ MongoDB에 수정된 게시글 저장
         postService.save(post);
 
         return ResponseEntity.ok("게시글이 수정되었습니다.");
     }
 
-
-
-    @PreAuthorize("hasRole('USER')") // ✅ "USER" 권한이 없으면 403 발생
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/{id}")
     public ResponseEntity<Post> getPostById(@PathVariable String id) {
         Optional<Post> optionalPost = postRepository.findById(id);
@@ -133,7 +148,4 @@ public class PostController {
 
         return ResponseEntity.ok(post);
     }
-
-
-
 }
