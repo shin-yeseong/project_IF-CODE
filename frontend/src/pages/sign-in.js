@@ -15,10 +15,15 @@ function Signin() {
     setError(null);
 
     try {
+      console.log("로그인 요청 데이터:", { userId, password });
       const response = await axios.post(
         "http://localhost:8080/api/login",
         { userId, password },
-        { withCredentials: true }
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
       console.log("✅ 로그인 성공! 응답 데이터:", response.data);
@@ -60,7 +65,7 @@ function Signin() {
               {error && <p style={{ color: "red" }}>{error}</p>} {/* 로그인 실패 시 에러 메시지 표시 */}
               <input
                 type="text"
-                name="userName"
+                name="userId"
                 placeholder="이메일"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}

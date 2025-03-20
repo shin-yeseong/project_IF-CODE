@@ -3,6 +3,7 @@ import Header from "../components/header";
 import Footer from "../components/footer";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { useNavigate } from "react-router-dom";
 
 const ItemType = "COURSE";
 
@@ -124,51 +125,111 @@ const MyPage = () => {
     password: "",
     introduction: "",
   });
+  const [posts, setPosts] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [memos, setMemos] = useState([]);
+  const [newMemo, setNewMemo] = useState("");
+  const [memoTitle, setMemoTitle] = useState("");
+  const navigate = useNavigate();
 
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("로그인이 필요합니다.");
-        setLoading(false);
-        return;
-      }
-
+    const fetchUserData = async () => {
       try {
+        setLoading(true);  // 데이터 로딩 시작
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.log("토큰이 없습니다. 로그인 페이지로 이동합니다.");
+          navigate("/login");
+          return;
+        }
+
+        console.log("프로필 요청 시작 - 토큰:", token.substring(0, 20) + "...");
+
+        // 사용자 정보 가져오기
         const response = await fetch("http://localhost:8080/api/profile", {
-          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("프로필 응답 상태:", response.status);
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("프로필 요청 실패:", response.status, errorData);
+          throw new Error(`사용자 정보를 가져오는데 실패했습니다. (${response.status})`);
+        }
+
+        const data = await response.json();
+        console.log("받은 사용자 데이터:", data);
+
+        setUser(data);
+        setProfilePicture(data.profilePictureUrl || "http://localhost:8080/default-profile.png");
+      } catch (error) {
+        console.error("사용자 데이터 가져오기 실패:", error);
+        console.error("에러 상세:", error.stack);
+        alert("사용자 정보를 가져오는데 실패했습니다. 다시 로그인해주세요.");
+        navigate("/login");
+      } finally {
+        setLoading(false);  // 데이터 로딩 완료
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchUserContent = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        // 게시글 가져오기
+        const postsResponse = await fetch("http://localhost:8080/api/posts/my-posts", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-
-        if (!response.ok) {
-          throw new Error("사용자 정보를 가져오는 데 실패했습니다.");
+        if (postsResponse.ok) {
+          const postsData = await postsResponse.json();
+          setPosts(postsData);
         }
 
-        const data = await response.json();
-        console.log("프로필 데이터 가져옴:", data);
-
-        setUser(data);
-        setProfilePicture(data.profilePictureUrl || "http://localhost:8080/default-profile.png");
-
-        setUpdatedUserInfo({
-          username: data.username,
-          email: data.email,
-          phone: data.phone,
-          password: "",
-          introduction: data.introduction || "",
+        // 댓글 가져오기
+        const commentsResponse = await fetch("http://localhost:8080/api/comments/my-comments", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
+        if (commentsResponse.ok) {
+          const commentsData = await commentsResponse.json();
+          setComments(commentsData);
+        }
+
+        // 메모 가져오기
+        const memosResponse = await fetch("http://localhost:8080/api/memos", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (memosResponse.ok) {
+          const memosData = await memosResponse.json();
+          setMemos(memosData);
+        }
       } catch (error) {
-        console.error("프로필 정보 불러오기 실패:", error);
-      } finally {
-        setLoading(false);
+        console.error("데이터 가져오기 실패:", error);
       }
     };
-    fetchUserProfile();
-  }, []);
+
+    fetchUserContent();
+  }, [navigate]);
 
   const moveCourse = (course, semester) => {
     setSemesters((prev) => {
@@ -227,38 +288,59 @@ const MyPage = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // 파일 크기 체크 (5MB 제한)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기는 5MB를 초과할 수 없습니다.");
+      return;
+    }
+
+    // 파일 타입 체크
+    if (!file.type.startsWith('image/')) {
+      alert("이미지 파일만 업로드 가능합니다.");
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("file", file); // ✅ 요청 필드 이름을 "file"로 변경
+    formData.append("file", file);
 
     const token = localStorage.getItem("token");
-    console.log("🔑 저장된 토큰:", token); // 디버깅용
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
 
     try {
       const response = await fetch("http://localhost:8080/api/profile/upload-picture", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`, // ✅ 인증 토큰 추가
-          // 'Content-Type': 'multipart/form-data' 제거 (자동 설정됨)
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`프로필 사진 업로드 실패 (status: ${response.status})`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || "프로필 사진 업로드에 실패했습니다.");
       }
 
       const data = await response.json();
       console.log("업로드 응답 데이터:", data);
 
       if (data.profilePictureUrl) {
-        const newProfileUrl = `http://localhost:8080${data.profilePictureUrl}`;
+        // URL이 상대 경로인 경우 전체 URL로 변환
+        const newProfileUrl = data.profilePictureUrl.startsWith('http')
+          ? data.profilePictureUrl
+          : `http://localhost:8080${data.profilePictureUrl}`;
+
         setProfilePicture(newProfileUrl);
-        setUser((prev) => ({ ...prev, profilePictureUrl: newProfileUrl }));
+        setUser(prev => ({ ...prev, profilePictureUrl: newProfileUrl }));
+        alert("프로필 사진이 성공적으로 변경되었습니다.");
       } else {
-        console.error("업로드 응답에 profilePictureUrl 없음:", data);
+        throw new Error("프로필 사진 URL이 없습니다.");
       }
     } catch (error) {
       console.error("프로필 사진 변경 실패:", error);
+      alert(error.message || "프로필 사진 변경에 실패했습니다.");
     }
   };
 
@@ -349,6 +431,106 @@ const MyPage = () => {
     }
   };
 
+  const handleDeleteProfilePicture = async () => {
+    if (!window.confirm("프로필 사진을 기본 이미지로 변경하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+
+      const response = await fetch("http://localhost:8080/api/profile/delete-picture", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("프로필 사진 삭제에 실패했습니다.");
+      }
+
+      setProfilePicture("http://localhost:8080/default-profile.png");
+      alert("프로필 사진이 기본 이미지로 변경되었습니다.");
+    } catch (error) {
+      console.error("Error deleting profile picture:", error);
+      alert("프로필 사진 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleAddMemo = async () => {
+    if (!memoTitle.trim() || !newMemo.trim()) {
+      alert("제목과 내용을 모두 입력해주세요.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch("http://localhost:8080/api/memos", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: memoTitle,
+          content: newMemo,
+        }),
+      });
+
+      if (response.ok) {
+        const newMemoData = await response.json();
+        setMemos([...memos, newMemoData]);
+        setMemoTitle("");
+        setNewMemo("");
+        alert("메모가 저장되었습니다.");
+      } else {
+        throw new Error("메모 저장에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("메모 저장 실패:", error);
+      alert("메모 저장에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteMemo = async (memoId) => {
+    if (!window.confirm("이 메모를 삭제하시겠습니까?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8080/api/memos/${memoId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        setMemos(memos.filter(memo => memo.id !== memoId));
+        alert("메모가 삭제되었습니다.");
+      } else {
+        throw new Error("메모 삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("메모 삭제 실패:", error);
+      alert("메모 삭제에 실패했습니다.");
+    }
+  };
 
   if (loading) return <p className="text-white p-32">로딩 중...</p>;
   if (!user) return <p className="text-white p-32">사용자 정보를 불러올 수 없습니다.</p>;
@@ -356,245 +538,378 @@ const MyPage = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen p-32 pt-32 bg-[#482070]">
-        <div className="w-full max-w-4xl text-left mb-10">
-          <h1 className="text-3xl font-bold text-[#ffffff]">My Page |</h1>
-          <p className="text-lg text-[#ffffff] mt-2">
-            프로필 확인 및 수정이 가능한 페이지입니다. <br />
-          </p>
-        </div>
-
-        <div className="w-full flex bg-white text-black rounded-lg shadow-lg overflow-visible">
-          {/* 왼쪽 메뉴 */}
-          <div className="w-1/3 bg-gray-100 p-6 flex flex-col items-center">
-            {/* 🔹 프로필 사진 */}
-            <label htmlFor="profile-upload" className="cursor-pointer">
-              <img
-                src={profilePicture || "http://localhost:8080/default-profile.png"}
-                alt="profile"
-                className="w-24 h-24 rounded-full border-2 border-gray-400"
-              />
-
-            </label>
-            <input
-              id="profile-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleProfilePictureChange}
-            />
-            <h2 className="mt-4 text-lg font-bold">{user.username}</h2>
-            <p className="text-gray-600">{user.userId}</p>
-
-            {/* 🔹 메뉴 리스트 */}
-            <nav className="mt-6 w-full text-center">
-              <ul className="space-y-4">
-                <li
-                  className={`cursor-pointer font-semibold ${selectedMenu === "개인정보" ? "text-purple-800" : "text-gray-600 hover:text-purple-800"}`}
-                  onClick={() => setSelectedMenu("개인정보")}
-                >
-                  개인정보
-                </li>
-                <li
-                  className={`cursor-pointer ${selectedMenu === "내 게시글" ? "text-purple-800 font-semibold" : "text-gray-600 hover:text-purple-800"}`}
-                  onClick={() => setSelectedMenu("내 게시글")}
-                >
-                  내 게시글
-                </li>
-                <li
-                  className={`cursor-pointer ${selectedMenu === "내 메모" ? "text-purple-800 font-semibold" : "text-gray-600 hover:text-purple-800"}`}
-                  onClick={() => setSelectedMenu("내 메모")}
-                >
-                  내 메모
-                </li>
-
-                <li
-                  className={`cursor-pointer ${selectedMenu === "학점 관리" ? "text-purple-800 font-semibold" : "text-gray-600 hover:text-purple-800"}`}
-                  onClick={() => setSelectedMenu("학점 관리")}
-                >
-                  학점 관리
-                </li>
-                <li className="text-red-600 cursor-pointer hover:text-red-800">회원탈퇴</li>
-              </ul>
-            </nav>
+      <div className="min-h-screen bg-gradient-to-b from-[#482070] to-[#2a123f] p-4 md:p-8 lg:p-32 pt-32">
+        <div className="w-full max-w-6xl mx-auto">
+          <div className="text-left mb-10">
+            <h1 className="text-3xl font-bold text-white">My Page</h1>
+            <p className="text-lg text-gray-200 mt-2">
+              프로필 확인 및 수정이 가능한 페이지입니다.
+            </p>
           </div>
 
-          <div className="w-2/3 p-6 flex flex-col">
-            {selectedMenu === "개인정보" && (
-              <>
-                <h2 className="text-2xl font-bold text-purple-800">🔒 개인정보 |</h2>
-                <div className="flex items-center justify-center flex-grow">
+          <div className="w-full flex flex-col md:flex-row bg-white rounded-xl shadow-2xl overflow-hidden">
+            {/* 왼쪽 메뉴 */}
+            <div className="w-full md:w-1/3 bg-gradient-to-b from-gray-50 to-gray-100 p-6 flex flex-col items-center">
+              {/* 프로필 사진 */}
+              <div className="flex flex-col items-center">
+                <div className="relative group">
                   <img
                     src={profilePicture}
-                    alt="profile"
-                    className="w-20 h-20 rounded-full border-2 border-gray-400"
+                    alt="프로필"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-purple-200 shadow-lg"
                   />
-                  <div className="ml-4">
-                    <div className="flex items-center">
-                      <p className="w-24"><strong>이름</strong></p>
-                      <span className="mx-2">|</span>
-                      <p>{user.username}</p>
-                    </div>
-                    <div className="flex items-center">
-                      <p className="w-24"><strong>메일</strong></p>
-                      <span className="mx-2">|</span>
-                      <p>{user.email}</p>
-                    </div>
-                    <div className="flex items-center">
-                      <p className="w-24"><strong>전화번호</strong></p>
-                      <span className="mx-2">|</span>
-                      <p>{user.phone}</p>
-                    </div>
-                    <div className="flex items-center">
-                      <p className="w-24"><strong>학번</strong></p>
-                      <span className="mx-2">|</span>
-                      <p>{user.userId}</p>
-                    </div>
-                    <div className="flex items-center">
-                      <p className="w-24"><strong>자기소개</strong></p>
-                      <span className="mx-2">|</span>
-                      <p>{user.introduction || "자기소개를 입력해주세요."}</p>
-                    </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full transition-all duration-300">
+                    <label className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePictureChange}
+                        className="hidden"
+                      />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      </svg>
+                    </label>
                   </div>
                 </div>
                 <button
-                  className="mt-6 bg-purple-800 text-white px-4 py-2 rounded hover:bg-purple-900"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={handleDeleteProfilePicture}
+                  className="mt-2 text-sm text-red-500 hover:text-red-700 transition-colors duration-200"
                 >
-                  회원정보 수정
+                  기본 프로필로 변경
                 </button>
-              </>
-            )}
+              </div>
 
-            {selectedMenu === "내 게시글" && (
-              <>
-                <h2 className="text-2xl font-bold text-purple-800">📂 내 게시글 |</h2>
-                <p className="mt-4 text-gray-600">사용자가 작성한 게시글 목록이 표시됩니다.</p>
-                {/* TODO: 실제 게시글 목록을 불러와 표시 */}
-              </>
-            )}
+              <div className="mt-4 text-center">
+                <h2 className="text-xl font-bold text-gray-800">{user.username}</h2>
+                <p className="text-gray-600">{user.userId}</p>
+              </div>
 
-            {selectedMenu === "내 메모" && (
-              <>
-                <h2 className="text-2xl font-bold text-purple-800">📝 내 메모 |</h2>
-                <p className="mt-4 text-gray-600">사용자의 메모 목록이 표시됩니다.</p>
-                {/* TODO: 실제 메모 목록을 불러와 표시 */}
-              </>
-            )}
-
-            {selectedMenu === "학점 관리" && (
-              <DndProvider backend={HTML5Backend}>
-                <h2 className="text-2xl font-bold text-purple-800">📚 학점 관리</h2>
-
-
-
-                <CourseList availableCourses={availableCourses} moveCourse={moveCourse} />
-
-
-
-                {/* 학기별 드롭 박스 */}
-                <div className="grid grid-cols-4 gap-4 mt-4">
-                  {Object.keys(semesters).map((sem) => (
-                    <Semester key={sem} semester={sem} courses={semesters[sem]} moveCourse={moveCourse} />
+              {/* 메뉴 리스트 */}
+              <nav className="mt-8 w-full">
+                <ul className="space-y-3">
+                  {["개인정보", "내 게시글", "내 메모", "학점 관리"].map((menu) => (
+                    <li
+                      key={menu}
+                      className={`cursor-pointer px-4 py-2 rounded-lg transition-all duration-200 ${selectedMenu === menu
+                        ? "bg-purple-100 text-purple-800 font-semibold"
+                        : "text-gray-600 hover:bg-purple-50 hover:text-purple-800"
+                        }`}
+                      onClick={() => setSelectedMenu(menu)}
+                    >
+                      {menu}
+                    </li>
                   ))}
-                </div>
+                  <li className="px-4 py-2 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 cursor-pointer">
+                    회원탈퇴
+                  </li>
+                </ul>
+              </nav>
+            </div>
 
-                <h3 className="mt-4 text-black">
-                  총 이수 학점: {totalCredits.required + totalCredits.elective}학점 (필수 {totalCredits.required}학점 / 선택 {totalCredits.elective}학점)
-                </h3>
-              </DndProvider>
-            )}
+            {/* 오른쪽 컨텐츠 */}
+            <div className="w-full md:w-2/3 p-6 md:p-8">
+              {selectedMenu === "개인정보" && (
+                <div className="space-y-6 flex flex-col items-center">
+                  <h2 className="text-2xl font-bold text-purple-800">🔒 개인정보</h2>
+                  <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl">
+                    <div className="flex flex-col items-center space-y-6">
+                      <div className="w-full space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="font-semibold text-gray-700">이름</span>
+                          <span className="text-gray-800">{user.username}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="font-semibold text-gray-700">메일</span>
+                          <span className="text-gray-800">{user.email}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="font-semibold text-gray-700">전화번호</span>
+                          <span className="text-gray-800">{user.phone}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="font-semibold text-gray-700">학번</span>
+                          <span className="text-gray-800">{user.userId}</span>
+                        </div>
+                      </div>
+                      <div className="w-full">
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <span className="font-semibold text-gray-700 block mb-2">자기소개</span>
+                          <p className="text-gray-800 whitespace-pre-wrap">{user.introduction || "자기소개를 입력해주세요."}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    className="bg-purple-800 text-white px-8 py-3 rounded-lg hover:bg-purple-900 transition-colors duration-200 shadow-md hover:shadow-lg"
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    회원정보 수정
+                  </button>
+                </div>
+              )}
+
+              {selectedMenu === "내 게시글" && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold text-purple-800">📂 내 게시글</h2>
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="space-y-4">
+                      {posts.length > 0 ? (
+                        posts.map((post) => (
+                          <div key={post.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-800 hover:text-purple-800 cursor-pointer">
+                                  {post.title}
+                                </h3>
+                                <p className="text-sm text-gray-600 mt-1">{post.content}</p>
+                                <div className="flex items-center text-sm text-gray-500 mt-2">
+                                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                                  <span className="mx-2">•</span>
+                                  <span>댓글 {post.commentCount}개</span>
+                                </div>
+                              </div>
+                              <div className="flex space-x-2">
+                                <button className="text-sm text-purple-600 hover:text-purple-800">수정</button>
+                                <button className="text-sm text-red-600 hover:text-red-800">삭제</button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-600 text-center py-4">작성한 게시글이 없습니다.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <h2 className="text-2xl font-bold text-purple-800 mt-8">💬 내 댓글</h2>
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="space-y-4">
+                      {comments.length > 0 ? (
+                        comments.map((comment) => (
+                          <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="text-gray-800">{comment.content}</p>
+                                <div className="flex items-center text-sm text-gray-500 mt-2">
+                                  <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                  <span className="mx-2">•</span>
+                                  <span className="text-purple-600">게시글: {comment.postTitle}</span>
+                                </div>
+                              </div>
+                              <div className="flex space-x-2">
+                                <button className="text-sm text-purple-600 hover:text-purple-800">수정</button>
+                                <button className="text-sm text-red-600 hover:text-red-800">삭제</button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-600 text-center py-4">작성한 댓글이 없습니다.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedMenu === "내 메모" && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold text-purple-800">📝 내 메모</h2>
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="mb-6">
+                      <input
+                        type="text"
+                        placeholder="메모 제목"
+                        value={memoTitle}
+                        onChange={(e) => setMemoTitle(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-2"
+                      />
+                      <textarea
+                        placeholder="메모 내용을 입력하세요..."
+                        value={newMemo}
+                        onChange={(e) => setNewMemo(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-32 resize-none mb-2"
+                      />
+                      <button
+                        onClick={handleAddMemo}
+                        className="w-full bg-purple-800 text-white px-4 py-2 rounded-lg hover:bg-purple-900 transition-colors duration-200"
+                      >
+                        메모 저장
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {memos.length > 0 ? (
+                        memos.map((memo) => (
+                          <div key={memo.id} className="border rounded-lg p-4 bg-gray-50">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-800">{memo.title}</h3>
+                                <p className="text-gray-600 mt-2 whitespace-pre-wrap">{memo.content}</p>
+                                <p className="text-sm text-gray-500 mt-2">
+                                  {new Date(memo.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteMemo(memo.id)}
+                                className="text-sm text-red-600 hover:text-red-800"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-600 text-center py-4">작성한 메모가 없습니다.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedMenu === "학점 관리" && (
+                <DndProvider backend={HTML5Backend}>
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-purple-800">📚 학점 관리</h2>
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                      <CourseList availableCourses={availableCourses} moveCourse={moveCourse} />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                        {Object.keys(semesters).map((sem) => (
+                          <Semester key={sem} semester={sem} courses={semesters[sem]} moveCourse={moveCourse} />
+                        ))}
+                      </div>
+                      <div className="mt-6 p-4 bg-purple-50 rounded-lg">
+                        <h3 className="text-lg font-semibold text-purple-800">
+                          총 이수 학점: {totalCredits.required + totalCredits.elective}학점
+                          <span className="block mt-1 text-sm text-purple-600">
+                            (필수 {totalCredits.required}학점 / 선택 {totalCredits.elective}학점)
+                          </span>
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                </DndProvider>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 🔹 회원정보 수정 모달 */}
+      {/* 회원정보 수정 모달 */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto sm:mt-10">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">회원정보 수정</h2>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">회원정보 수정</h2>
 
-            <label className="block mb-4 cursor-pointer">
-              <img src={profilePicture} alt="profile"
-                className="w-24 h-24 rounded-full border-2 border-gray-400" />
-              <input type="file" className="hidden" accept="image/*" onChange={handleProfilePictureChange} />
-            </label>
+              <div className="flex justify-center mb-6">
+                <div className="relative group">
+                  <img
+                    src={profilePicture}
+                    alt="profile"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-purple-200 shadow-lg"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full transition-all duration-300">
+                    <label className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleProfilePictureChange}
+                      />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      </svg>
+                    </label>
+                  </div>
+                </div>
+              </div>
 
-            <div className="mb-4">
-              <label className="block">이름</label>
-              <input
-                type="text"
-                name="username"
-                value={updatedUserInfo.username}
-                onChange={handleInputChange}
-                className="border p-2 w-full"
-              />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={updatedUserInfo.username}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={updatedUserInfo.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={updatedUserInfo.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">자기소개</label>
+                  <textarea
+                    name="introduction"
+                    value={updatedUserInfo.introduction}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-24 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={updatedUserInfo.password}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                {passwordError && (
+                  <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+                )}
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <button
+                  className="w-full bg-purple-800 text-white px-4 py-2 rounded-lg hover:bg-purple-900 transition-colors duration-200"
+                  onClick={handleSaveChanges}
+                >
+                  수정 저장
+                </button>
+                <button
+                  className="w-full text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  취소
+                </button>
+              </div>
             </div>
-            <div className="mb-4">
-              <label className="block">이메일</label>
-              <input
-                type="email"
-                name="email"
-                value={updatedUserInfo.email}
-                onChange={handleInputChange}
-                className="border p-2 w-full"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block">전화번호</label>
-              <input
-                type="text"
-                name="phone"
-                value={updatedUserInfo.phone}
-                onChange={handleInputChange}
-                className="border p-2 w-full"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block">자기소개</label>
-              <textarea
-                name="introduction"
-                value={updatedUserInfo.introduction}
-                onChange={handleInputChange}
-                className="border p-2 w-full h-20 resize-none"
-              />
-            </div>
-
-
-            <div className="mb-4">
-              <label className="block">새 비밀번호</label>
-              <input
-                type="password"
-                name="password"
-                value={updatedUserInfo.password}
-                onChange={handleInputChange}
-                className="border p-2 w-full"
-              />
-            </div>
-
-            {/* 🔹 비밀번호 확인 입력 */}
-            <div className="mb-4">
-              <label className="block">비밀번호 확인</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="border p-2 w-full"
-              />
-            </div>
-
-            {/* 🔹 비밀번호 불일치 에러 메시지 */}
-            {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-
-            <button
-              className="bg-purple-800 text-white px-4 py-2 rounded w-full"
-              onClick={handleSaveChanges}
-            >
-              수정 저장
-            </button>
-            <button className="mt-4 text-gray-600 hover:underline w-full" onClick={() => setIsModalOpen(false)}>
-              취소
-            </button>
           </div>
         </div>
       )}
