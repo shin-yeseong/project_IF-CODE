@@ -35,7 +35,7 @@ function Header() {
               <li><Link to={"/introduction"}>Introduction</Link></li>
               <li><a href="majorguide.html">Major Guide</a></li>
               <li><Link to={"/board"}>Algorithm Study</Link></li>
-              <li><a href="competition.html">Competitions</a></li>
+              <li><Link to={"/competition"}>Competitions</Link></li>
               <li><Link to={"/careerpath"}>Career Path</Link></li>
             </ul>
           </div>

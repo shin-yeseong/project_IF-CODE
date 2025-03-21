@@ -4,6 +4,7 @@ import Footer from "../components/footer";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const ItemType = "COURSE";
 
@@ -132,108 +133,151 @@ const MyPage = () => {
   const [memoTitle, setMemoTitle] = useState("");
   const navigate = useNavigate();
 
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);  // 데이터 로딩 시작
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.log("토큰이 없습니다. 로그인 페이지로 이동합니다.");
-          navigate("/login");
-          return;
-        }
-
-        console.log("프로필 요청 시작 - 토큰:", token.substring(0, 20) + "...");
-
-        // 사용자 정보 가져오기
-        const response = await fetch("http://localhost:8080/api/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        console.log("프로필 응답 상태:", response.status);
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error("프로필 요청 실패:", response.status, errorData);
-          throw new Error(`사용자 정보를 가져오는데 실패했습니다. (${response.status})`);
-        }
-
-        const data = await response.json();
-        console.log("받은 사용자 데이터:", data);
-
-        setUser(data);
-        setProfilePicture(data.profilePictureUrl || "http://localhost:8080/default-profile.png");
-      } catch (error) {
-        console.error("사용자 데이터 가져오기 실패:", error);
-        console.error("에러 상세:", error.stack);
-        alert("사용자 정보를 가져오는데 실패했습니다. 다시 로그인해주세요.");
+  // 프로필 가져오기
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.log("토큰이 없습니다. 로그인 페이지로 이동합니다.");
         navigate("/login");
-      } finally {
-        setLoading(false);  // 데이터 로딩 완료
+        return;
       }
-    };
 
-    fetchUserData();
-  }, [navigate]);
+      const response = await axios.get("http://localhost:8080/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.data) {
+        throw new Error("사용자 정보를 가져오는데 실패했습니다.");
+      }
+
+      setUser(response.data.user);
+
+      // 프로필 사진 URL 처리
+      if (response.data.user.profilePictureUrl) {
+        const profileUrl = response.data.user.profilePictureUrl.startsWith('http')
+          ? response.data.user.profilePictureUrl
+          : `http://localhost:8080${response.data.user.profilePictureUrl}`;
+        setProfilePicture(profileUrl);
+      } else {
+        setProfilePicture("http://localhost:8080/default-profile.png");
+      }
+
+      // 커리큘럼 데이터 가져오기
+      const curriculumResponse = await axios.get("http://localhost:8080/api/users/curriculum", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (curriculumResponse.data) {
+        if (curriculumResponse.data.semesters) {
+          setSemesters(curriculumResponse.data.semesters);
+        }
+        if (curriculumResponse.data.totalCredits) {
+          setTotalCredits(curriculumResponse.data.totalCredits);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      alert("사용자 정보를 가져오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 내 게시글 가져오기
+  const fetchMyPosts = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:8080/api/posts/my-posts", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.data) {
+        throw new Error("내 게시글을 가져오는데 실패했습니다.");
+      }
+
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching my posts:", error);
+      alert("내 게시글을 가져오는데 실패했습니다.");
+    }
+  };
+
+  // 내 댓글 가져오기
+  const fetchMyComments = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:8080/api/comments/my-comments", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.data) {
+        throw new Error("내 댓글을 가져오는데 실패했습니다.");
+      }
+
+      setComments(response.data);
+    } catch (error) {
+      console.error("Error fetching my comments:", error);
+      alert("내 댓글을 가져오는데 실패했습니다.");
+    }
+  };
+
+  // 메모 가져오기
+  const fetchMemos = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:8080/api/memos", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.data) {
+        throw new Error("메모를 가져오는데 실패했습니다.");
+      }
+
+      setMemos(response.data);
+    } catch (error) {
+      console.error("Error fetching memos:", error);
+      alert("메모를 가져오는데 실패했습니다.");
+    }
+  };
 
   useEffect(() => {
-    const fetchUserContent = async () => {
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
+    }
+
+    const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
-
-        // 게시글 가져오기
-        const postsResponse = await fetch("http://localhost:8080/api/posts/my-posts", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (postsResponse.ok) {
-          const postsData = await postsResponse.json();
-          setPosts(postsData);
-        }
-
-        // 댓글 가져오기
-        const commentsResponse = await fetch("http://localhost:8080/api/comments/my-comments", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (commentsResponse.ok) {
-          const commentsData = await commentsResponse.json();
-          setComments(commentsData);
-        }
-
-        // 메모 가져오기
-        const memosResponse = await fetch("http://localhost:8080/api/memos", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (memosResponse.ok) {
-          const memosData = await memosResponse.json();
-          setMemos(memosData);
-        }
+        await fetchProfile();
+        await fetchMyPosts();
+        await fetchMyComments();
+        await fetchMemos();
       } catch (error) {
-        console.error("데이터 가져오기 실패:", error);
+        console.error("Error fetching data:", error);
       }
     };
-
-    fetchUserContent();
+    fetchData();
   }, [navigate]);
 
-  const moveCourse = (course, semester) => {
-    setSemesters((prev) => {
-      const newSemesters = { ...prev };
+  const moveCourse = async (course, semester) => {
+    try {
+      const newSemesters = { ...semesters };
 
       // 기존 학기에서 과목 제거
       Object.keys(newSemesters).forEach((key) => {
@@ -241,7 +285,6 @@ const MyPage = () => {
       });
 
       if (semester === "remove") {
-        // ✅ 중복 방지: 이미 위 리스트에 있는지 확인 후 추가
         setAvailableCourses((prev) => {
           const alreadyExists = prev.some((c) => c.id === course.id);
           return alreadyExists ? prev : [...prev, course];
@@ -250,39 +293,55 @@ const MyPage = () => {
         newSemesters[semester] = [...newSemesters[semester], course];
       }
 
-      // ✅ 학점 업데이트 유지
-      updateCredits(newSemesters);
+      // 학점 업데이트
+      const newTotal = { required: 0, elective: 0 };
+      Object.values(newSemesters).forEach((courses) => {
+        courses.forEach((c) => {
+          if (c.required) {
+            newTotal.required += 3;
+          } else {
+            newTotal.elective += 3;
+          }
+        });
+      });
 
-      return newSemesters;
-    });
+      // 상태 업데이트
+      setSemesters(newSemesters);
+      setTotalCredits(newTotal);
 
-    if (semester !== "remove") {
-      setAvailableCourses((prev) => prev.filter((c) => c.id !== course.id));
+      if (semester !== "remove") {
+        setAvailableCourses((prev) => prev.filter((c) => c.id !== course.id));
+      }
+
+      // 저장
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch("http://localhost:8080/api/users/curriculum", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          semesters: newSemesters,
+          totalCredits: newTotal,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("커리큘럼 저장에 실패했습니다.");
+      }
+
+      alert("커리큘럼이 저장되었습니다.");
+    } catch (error) {
+      console.error("커리큘럼 저장 오류:", error);
+      alert("커리큘럼 저장에 실패했습니다.");
     }
   };
-
-
-
-  const updateCredits = (semesters) => {
-    let newTotal = { required: 0, elective: 0 };
-
-    // 모든 학기별 과목을 다시 검사
-    Object.values(semesters).forEach((courses) => {
-      courses.forEach((c) => {
-        if (c.required) {
-          newTotal.required += 3; // 필수 과목은 3학점
-        } else {
-          newTotal.elective += 3; // 선택 과목도 3학점
-        }
-      });
-    });
-
-    setTotalCredits(newTotal);
-  };
-
-
-
-
 
   const handleProfilePictureChange = async (event) => {
     const file = event.target.files[0];
@@ -310,7 +369,7 @@ const MyPage = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/profile/upload-picture", {
+      const response = await fetch("http://localhost:8080/api/users/profile/upload-picture", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -350,7 +409,7 @@ const MyPage = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await fetch("http://localhost:8080/api/verify-password", {
+      const response = await fetch("http://localhost:8080/api/users/verify-password", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -407,7 +466,7 @@ const MyPage = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/profile/update", {
+      const response = await fetch("http://localhost:8080/api/users/profile/update", {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -443,7 +502,7 @@ const MyPage = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/profile/delete-picture", {
+      const response = await fetch("http://localhost:8080/api/users/profile/delete-picture", {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -475,7 +534,7 @@ const MyPage = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/memos", {
+      const response = await fetch("http://localhost:8080/api/users/memos", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -512,7 +571,7 @@ const MyPage = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/memos/${memoId}`, {
+      const response = await fetch(`http://localhost:8080/api/users/memos/${memoId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -529,6 +588,68 @@ const MyPage = () => {
     } catch (error) {
       console.error("메모 삭제 실패:", error);
       alert("메모 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleOpenModal = () => {
+    setUpdatedUserInfo({
+      username: user.username || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      password: "",
+      introduction: user.introduction || "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("이 게시글을 삭제하시겠습니까?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.delete(`http://localhost:8080/api/posts/${postId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
+
+      if (!response.data) {
+        throw new Error("게시글 삭제에 실패했습니다.");
+      }
+
+      setPosts(posts.filter(post => post.id !== postId));
+      alert("게시글이 삭제되었습니다.");
+    } catch (error) {
+      console.error("게시글 삭제 실패:", error);
+      alert("게시글 삭제에 실패했습니다.");
+    }
+  };
+
+  // 내 댓글 삭제하기
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.delete(`http://localhost:8080/api/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.status === 200) {
+        setComments(comments.filter(comment => comment.id !== commentId));
+        alert("댓글이 삭제되었습니다.");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      alert("댓글 삭제에 실패했습니다.");
     }
   };
 
@@ -642,7 +763,7 @@ const MyPage = () => {
                   </div>
                   <button
                     className="bg-purple-800 text-white px-8 py-3 rounded-lg hover:bg-purple-900 transition-colors duration-200 shadow-md hover:shadow-lg"
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={handleOpenModal}
                   >
                     회원정보 수정
                   </button>
@@ -671,7 +792,12 @@ const MyPage = () => {
                               </div>
                               <div className="flex space-x-2">
                                 <button className="text-sm text-purple-600 hover:text-purple-800">수정</button>
-                                <button className="text-sm text-red-600 hover:text-red-800">삭제</button>
+                                <button
+                                  className="text-sm text-red-600 hover:text-red-800"
+                                  onClick={() => handleDeletePost(post.id)}
+                                >
+                                  삭제
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -699,7 +825,12 @@ const MyPage = () => {
                               </div>
                               <div className="flex space-x-2">
                                 <button className="text-sm text-purple-600 hover:text-purple-800">수정</button>
-                                <button className="text-sm text-red-600 hover:text-red-800">삭제</button>
+                                <button
+                                  className="text-sm text-red-600 hover:text-red-800"
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                >
+                                  삭제
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -798,9 +929,19 @@ const MyPage = () => {
       {/* 회원정보 수정 모달 */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto" style={{ maxHeight: '80vh', top: '50%', transform: 'translateY(-50%)' }}>
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">회원정보 수정</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">회원정보 수정</h2>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
               <div className="flex justify-center mb-6">
                 <div className="relative group">
@@ -877,6 +1018,7 @@ const MyPage = () => {
                     value={updatedUserInfo.password}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="변경하지 않으려면 비워두세요"
                   />
                 </div>
 
@@ -887,6 +1029,7 @@ const MyPage = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="변경하지 않으려면 비워두세요"
                   />
                 </div>
 
@@ -901,12 +1044,6 @@ const MyPage = () => {
                   onClick={handleSaveChanges}
                 >
                   수정 저장
-                </button>
-                <button
-                  className="w-full text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  취소
                 </button>
               </div>
             </div>

@@ -15,10 +15,12 @@ function Signin() {
     setError(null);
 
     try {
-      console.log("로그인 요청 데이터:", { userId, password });
+      // userId에서 :bootRun 제거
+      const cleanUserId = userId.replace(/:bootRun$/, '').trim();
+      console.log("로그인 요청 데이터:", { userId: cleanUserId, password });
       const response = await axios.post(
-        "http://localhost:8080/api/login",
-        { userId, password },
+        "http://localhost:8080/api/users/login",
+        { userId: cleanUserId, password },
         {
           headers: {
             'Content-Type': 'application/json'
@@ -66,13 +68,13 @@ function Signin() {
               <input
                 type="text"
                 name="userId"
-                placeholder="이메일"
+                placeholder="학번"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
               />
               <input
                 type="password"
-                name="userPassword"
+                name="password"
                 placeholder="비밀번호"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

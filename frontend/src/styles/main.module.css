@@ -56,4 +56,43 @@
   width: 400px;
   height: 450px;
   cursor: pointer;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bb a {
+  text-decoration: none;
+}
+
+.bb > a > div {
+  padding: 12px 15px;
+  margin-bottom: 5px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bb > a > div:hover {
+  background-color: rgba(72, 32, 112, 0.05);
+  border-left: 3px solid #482070;
+  transform: translateX(5px);
+}
+
+.bb > a > div > div:first-child {
+  font-size: 15px;
+  color: #482070;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb > a > div > div:last-child {
+  font-size: 13px;
+  color: #666;
 }
