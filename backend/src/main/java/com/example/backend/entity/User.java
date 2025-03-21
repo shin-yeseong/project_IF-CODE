@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Getter;
 import lombok.Setter;
+import java.util.List;
+import java.util.Map;
 
 @Document(collection = "users")
 @Data
@@ -45,6 +47,8 @@ public class User {
     private String introduction;
 
     private String profilePictureUrl;
+    private Map<String, List<Map<String, Object>>> semesters;
+    private Map<String, Integer> totalCredits;
 
     private String role = "USER";
 
@@ -54,5 +58,21 @@ public class User {
 
     public void setProfilePictureUrl(String profilePictureUrl) {
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public Map<String, List<Map<String, Object>>> getSemesters() {
+        return semesters;
+    }
+
+    public void setSemesters(Map<String, List<Map<String, Object>>> semesters) {
+        this.semesters = semesters;
+    }
+
+    public Map<String, Integer> getTotalCredits() {
+        return totalCredits;
+    }
+
+    public void setTotalCredits(Map<String, Integer> totalCredits) {
+        this.totalCredits = totalCredits;
     }
 }

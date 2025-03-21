@@ -5,7 +5,6 @@ import com.example.backend.entity.User;
 import com.example.backend.repository.PostRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.JwtUtil;
-import com.example.backend.service.PostService;
 import com.example.backend.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,7 +29,6 @@ public class PostController {
 
     private final JwtUtil jwtUtil;
     private final PostRepository postRepository;
-    private final PostService postService;
     private final UserRepository userRepository;
     private final FileService fileService;
 
@@ -38,7 +36,8 @@ public class PostController {
     public ResponseEntity<?> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<Post> posts = postService.getAllPosts(page, size);
+        Page<Post> posts = postRepository
+                .findAllByOrderByCreatedAtDesc(org.springframework.data.domain.PageRequest.of(page, size));
         return ResponseEntity.ok(posts);
     }
 
@@ -55,7 +54,7 @@ public class PostController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 요청입니다.");
             }
 
-            List<Post> myPosts = postService.getPostsByUser(userId);
+            List<Post> myPosts = postRepository.findByUserIdOrderByCreatedAtDesc(userId);
             System.out.println("📢 사용자의 게시글 수: " + myPosts.size());
             return ResponseEntity.ok(myPosts);
         } catch (Exception e) {
@@ -110,7 +109,7 @@ public class PostController {
             @RequestParam(value = "files", required = false) List<MultipartFile> files,
             @RequestParam(value = "deleteFiles", required = false) List<String> deleteFilePaths) throws IOException {
 
-        Optional<Post> optionalPost = postService.getPostById(id);
+        Optional<Post> optionalPost = postRepository.findById(id);
         if (optionalPost.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시글을 찾을 수 없습니다.");
         }
@@ -129,7 +128,7 @@ public class PostController {
             post.getFilePaths().addAll(newFilePaths);
         }
 
-        postService.save(post);
+        postRepository.save(post);
 
         return ResponseEntity.ok("게시글이 수정되었습니다.");
     }
@@ -147,5 +146,43 @@ public class PostController {
         postRepository.save(post);
 
         return ResponseEntity.ok(post);
+    }
+
+    @GetMapping("/recent")
+    public ResponseEntity<?> getRecentPosts() {
+        try {
+            List<Post> recentPosts = postRepository.findTop5ByOrderByCreatedAtDesc();
+            return ResponseEntity.ok(recentPosts);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("최신 게시글을 불러오는데 실패했습니다.");
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> deletePost(@PathVariable String id, @RequestHeader("Authorization") String token) {
+        try {
+            String userId = jwtUtil.extractUserId(token.replace("Bearer ", ""));
+            if (userId == null || userId.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 요청입니다.");
+            }
+
+            Optional<Post> optionalPost = postRepository.findById(id);
+            if (optionalPost.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시글을 찾을 수 없습니다.");
+            }
+
+            Post post = optionalPost.get();
+            if (!post.getUserId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("이 게시글을 삭제할 권한이 없습니다.");
+            }
+
+            postRepository.delete(post);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("게시글 삭제 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 }
