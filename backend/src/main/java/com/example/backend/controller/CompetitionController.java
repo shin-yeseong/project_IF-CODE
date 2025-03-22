@@ -34,6 +34,17 @@ public class CompetitionController {
         return ResponseEntity.ok(competitions);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCompetitionById(@PathVariable String id) {
+        try {
+            Competition competition = competitionRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("공모전을 찾을 수 없습니다."));
+            return ResponseEntity.ok(competition);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> createCompetition(@RequestBody Competition competition,

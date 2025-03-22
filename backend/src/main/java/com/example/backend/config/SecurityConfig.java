@@ -55,6 +55,7 @@ public class SecurityConfig {
                                 "/api/memos")
                         .authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/competitions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/competitions/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/jobs").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/jobs/{id}").permitAll()
                         .requestMatchers("/api/competitions/**").authenticated()
