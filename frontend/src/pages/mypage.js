@@ -171,6 +171,16 @@ const MyPage = () => {
       if (curriculumResponse.data) {
         if (curriculumResponse.data.semesters) {
           setSemesters(curriculumResponse.data.semesters);
+
+          // 이미 배치된 과목들을 제외한 나머지 과목들만 availableCourses에 설정
+          const placedCourses = new Set();
+          Object.values(curriculumResponse.data.semesters).forEach(semesterCourses => {
+            semesterCourses.forEach(course => {
+              placedCourses.add(course.id);
+            });
+          });
+
+          setAvailableCourses(initialCourses.filter(course => !placedCourses.has(course.id)));
         }
         if (curriculumResponse.data.totalCredits) {
           setTotalCredits(curriculumResponse.data.totalCredits);
@@ -534,7 +544,7 @@ const MyPage = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/users/memos", {
+      const response = await fetch("http://localhost:8080/api/memos", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -571,7 +581,7 @@ const MyPage = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/users/memos/${memoId}`, {
+      const response = await fetch(`http://localhost:8080/api/memos/${memoId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

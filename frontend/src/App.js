@@ -15,6 +15,7 @@ import JobPosting from "./pages/jobposting";
 import CompetitionForm from './pages/CompetitionForm';
 import JobPostingForm from './pages/JobPostingForm';
 import JobPostingDetail from './pages/JobPostingDetail';
+import CompetitionDetail from './pages/CompetitionDetail';
 
 import "./index.css";
 function App() {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/careerpath" element={<CareerPath />} />
         <Route path="/competition" element={<Competition />} />
         <Route path="/competition/new" element={<CompetitionForm />} />
+        <Route path="/competition/:id" element={<CompetitionDetail />} />
         <Route path="/jobposting" element={<JobPosting />} />
         <Route path="/jobposting/new" element={<JobPostingForm />} />
         <Route path="/jobposting/:id" element={<JobPostingDetail />} />
