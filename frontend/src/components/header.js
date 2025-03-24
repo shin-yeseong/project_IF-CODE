@@ -33,9 +33,10 @@ function Header() {
             <h2>MENU</h2>
             <ul>
               <li><Link to={"/introduction"}>Introduction</Link></li>
-              <li><a href="majorguide.html">Major Guide</a></li>
+              <li><Link to={"/major-guide"}>Major Guide</Link></li>
               <li><Link to={"/board"}>Algorithm Study</Link></li>
               <li><Link to={"/competition"}>Competitions</Link></li>
+              <li><Link to={"/jobposting"}>Job Posting</Link></li>
               <li><Link to={"/careerpath"}>Career Path</Link></li>
             </ul>
           </div>

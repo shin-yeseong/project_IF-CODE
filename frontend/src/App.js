@@ -16,6 +16,7 @@ import CompetitionForm from './pages/CompetitionForm';
 import JobPostingForm from './pages/JobPostingForm';
 import JobPostingDetail from './pages/JobPostingDetail';
 import CompetitionDetail from './pages/CompetitionDetail';
+import MajorGuide from "./pages/MajorGuide";
 
 import "./index.css";
 function App() {
@@ -38,6 +39,7 @@ function App() {
         <Route path="/jobposting" element={<JobPosting />} />
         <Route path="/jobposting/new" element={<JobPostingForm />} />
         <Route path="/jobposting/:id" element={<JobPostingDetail />} />
+        <Route path="/major-guide" element={<MajorGuide />} />
       </Routes>
     </Router>
   );
