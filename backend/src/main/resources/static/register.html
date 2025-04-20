@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+</head>
+<body>
+<h2>회원가입</h2>
+<form id="registerForm">
+    <input type="text" id="userID" placeholder="아이디(학번 10자)" required><br>
+    <span class="error-message" id="userIDError"></span><br>
+
+    <input type="password" id="password" placeholder="비밀번호" required><br>
+    <span class="error-message" id="passwordError"></span><br>
+
+    <input type="password" id="passwordCheck" placeholder="비밀번호 확인" required><br>
+    <span class="error-message" id="passwordCheckError"></span><br>
+
+    <input type="text" id="username" placeholder="이름(닉네임)" required><br>
+    <span class="error-message" id="usernameError"></span><br>
+
+    <input type="email" id="email" placeholder="이메일(본인확인용)" required><br>
+    <span class="error-message" id="emailError"></span><br>
+
+    <input type="number" id="phone" placeholder="전화번호(본인확인용)" required><br>
+    <span class="error-message" id="phoneError"></span><br>
+
+    <input type="checkbox" id="privacyConsent" required>개인정보 동의<br>
+    <span class="error-message" id="privacyConsentError"></span><br>
+
+    <button type="submit">가입하기</button>
+</form>
+
+<style>
+    .error-message {
+        color: red;
+        font-size: 12px;
+        display: block;
+        margin-top: 4px;
+    }
+</style>
+
+<script>
+    document.getElementById("registerForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const userData = {
+            userID: document.getElementById("userID").value,
+            password: document.getElementById("password").value,
+            passwordCheck : document.getElementById("passwordCheck").value,
+            username: document.getElementById("username").value,
+            email: document.getElementById("email").value,
+            phone: document.getElementById("phone").value,
+            privacyConsent : document.getElementById("privacyConsent").checked ? "true" : "false"
+        };
+
+        const response = await fetch("/api/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData)
+        });
+
+        const result = await response.text();
+        alert(result);
+    });
+</script>
+</body>
+</html>
